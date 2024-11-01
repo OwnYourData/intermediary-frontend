@@ -9,7 +9,7 @@ const LOGIN_PATH = "/api/login";
 
 // get session object
 export async function getSession() {
-    let session = await getIronSession<SessionData>(cookies(), sessionOptions);
+    let session = await getIronSession<SessionData>(await cookies(), sessionOptions);
     
     let session_keys = Object.keys(session);
     for(const key in defaultSession) {  // loop through every key of the default session
