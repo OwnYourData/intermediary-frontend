@@ -2,6 +2,7 @@ import { type Object } from "@/lib/PodAPIClient";
 import { getSession } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 import { client } from "@/lib/sharedEEGClient";
+import * as config from "@/lib/config";
 
 export async function GET(req: NextRequest) {
     let session = await getSession();
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
     if(Number.isNaN(page))
         page = 1;
 
-    const COLLECTION = process.env.EEG_COLLECTION!!;
+    const COLLECTION = config.CATALOGUE_COLLECTION;
 
     let [fetched_data, parsed] = await client.get_objects(parseInt(COLLECTION), page);
     
@@ -41,8 +42,6 @@ export async function GET(req: NextRequest) {
     };
 
     return new NextResponse(JSON.stringify(r), {
-        "headers": {
-            "content-type": "application/json"
-        }
+        "headers": { "content-type": "application/json" }
     });
 }
