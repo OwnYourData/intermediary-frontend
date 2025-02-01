@@ -7,16 +7,14 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { postD3A } from "./requests";
 
-const D3A_SCHEMA = "D3Aeeg";
-
-export default function D3AeegOverlay({
+export default function D3AOverlay({
     onClose,
     open,
-    object_id
+    object_data
 }: {
     onClose: any,
     open: boolean,
-    object_id: string
+    object_data: any
 }) {
     let [data, setData] = useState({});
     const mutation = useMutation({
@@ -40,13 +38,15 @@ export default function D3AeegOverlay({
             return;
         }
 
-        mutation.mutate({ data, object_id } as any);
+        mutation.mutate({ data, "object_id": object_data["object_id"] } as any);
         destroy();
     }
+
+    if(!object_data) return <></>;
     
-    return <Overlay open={open} onClose={onClose}>
+    return <Overlay open={open} onClose={destroy}>
         <h1 className="text-2xl pb-4">Access Data</h1>
-        <SOYAForm setNewData={setData} schema={D3A_SCHEMA} />
+        <SOYAForm setNewData={setData} data={data} schema={object_data["schema"]} />
         <div className="pt-4 flex flex-row">
             <button className={Default + " w-[50%]"} onClick={destroy}>Cancel</button>
             <button className={Purple + " w-[50%]"} onClick={submit}>Submit</button>

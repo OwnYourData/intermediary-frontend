@@ -7,12 +7,12 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { postD2A } from "./requests";
 
-const D2A_SCHEMA = "D2Aeeg";
-
-export default function D2AeegOverlay({
+export default function D2AOverlay({
+    schema,
     onClose,
     open
 }: {
+    schema: string
     onClose: any
     open: boolean
 }) {
@@ -44,7 +44,7 @@ export default function D2AeegOverlay({
     
     return <Overlay open={open} onClose={onClose}>
         <h1 className="text-2xl pb-4">Add Data</h1>
-        <SOYAForm setNewData={setData} schema={D2A_SCHEMA} />
+        <SOYAForm setNewData={setData} data={data} schema={schema} />
         <div className="pt-4 flex flex-row">
             <button className={Default + " w-[50%]"} onClick={destroy}>Cancel</button>
             <button className={Purple + " w-[50%]"} onClick={submit}>Submit</button>
