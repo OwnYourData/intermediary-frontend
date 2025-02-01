@@ -20,7 +20,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-        <body className={inter.className}>
+        <body className={inter.className + " " + "h-auto"}>
             <TopBar />
             <div className="flex flex-row">
                 {/* We only show this on large screens */}
