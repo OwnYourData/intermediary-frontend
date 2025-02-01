@@ -59,8 +59,8 @@ export function LogsClient() {
                 { (data as any[])  // hehe intellisense :)
                     .map((el, i) => {
                             let onMoreInfoClick = null;
-                            if(Object.keys(el).includes("object-id"))
-                                onMoreInfoClick = () => setDrawerData({id: el["object-id"], name: el.name, schema: el.schema});
+                            if(Object.keys(el).includes("object-id") && el["display"] !== false)
+                                onMoreInfoClick = () => setDrawerData({id: el["object-id"], log_id: el["log-id"], name: el.name, schema: el.schema, type: "log"});
 
                             return <LogsRow
                                 key={i}
