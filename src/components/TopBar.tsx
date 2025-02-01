@@ -1,19 +1,14 @@
 import { getSession } from "@/lib/session";
-import { Default } from "./Buttons";
 import UserTile from "./UserTile";
 import Link from "next/link";
+import { Default } from "./Buttons";
 
 export default async function TopBar() {
     let session = await getSession();
 
-    let user_element;
-    if(!session.is_logged_in && !session.is_verified) {
-        user_element = <a className={Default + " font-bold"} href="/api/login">Sign in</a>;
-    } else if(session.is_logged_in && !session.is_verified) {
-        user_element = <></>;
-    } else {
+    let user_element = <a className={Default + " font-bold"} href="/api/login">Sign in</a>;
+    if(session.is_logged_in && session.is_verified)    
         user_element = <UserTile sessionData={session.user} />;
-    }
 
     return <div className="flex flex-row justify-between pt-4 pb-4 px-6 text-white bg-[#202537] items-center">
         <div className="float-left">
