@@ -61,7 +61,7 @@ export function ContractsClient() {
                 { (data as any[])  // hehe intellisense :)
                     .map((el, i) => {
                             let onMoreInfoClick = null;
-                            onMoreInfoClick = () => setDrawerData({id: el["object-id"], name: el.name });
+                            onMoreInfoClick = () => setDrawerData({id: el["object-id"], name: el.name, type: "contract" });
 
                             return <ContractsRow
                                 key={i}
