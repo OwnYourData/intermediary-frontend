@@ -1,0 +1,12 @@
+link:
+/user/profile -> [Link Wallet]
+-> /api/wallet/link -> admin.go-data.at
+-> /api/wallet/callback -> /user/profile
+
+signin:
+GET /api/login?target=wallet
+-> GET /api/wallet/login -> qr code data, backend creates uuid
+wallet qr scan -> admin.go-data.at POST /api/wallet/login
+client -> 3s poll /api/wallet/progress
+=> { "please": "wait" } / { "please": "continue", "next": "/api/login" }
+=> entry at session.is_logged_in && session.is_verified;
