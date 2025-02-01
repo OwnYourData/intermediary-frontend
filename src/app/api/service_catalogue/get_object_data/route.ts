@@ -1,6 +1,6 @@
 import { getSession } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
-import { client } from "@/lib/sharedEEGClient";
+import { client } from "@/lib/sharedServiceCatalogueClient";
 
 export async function GET(req: NextRequest) {
     let session = await getSession();

@@ -11,7 +11,7 @@ export async function fetchServices() {
 }
 
 export async function fetchObjects(page: number) {
-    let res = await fetch(`/api/data_catalogue/get_eeg_objects?page=${page}`);
+    let res = await fetch(`/api/data_catalogue/get_objects?page=${page}`);
     let json = await res.json();
 
     if(res.status !== 200) 
@@ -21,7 +21,7 @@ export async function fetchObjects(page: number) {
 }
 
 export async function fetchObject(object_id: string) {
-    let res = await fetch(`/api/data_catalogue/get_eeg_object_data?id=${object_id}`);
+    let res = await fetch(`/api/data_catalogue/get_object_data?id=${object_id}`);
     let json = await res.json();
 
     if(res.status !== 200) 

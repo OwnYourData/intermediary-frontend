@@ -4,7 +4,13 @@ export interface PodMeta {
 }
 
 export function podmeta_from_string(txt: string): PodMeta {
-    let url = new URL(txt);
+    let url;
+    try {
+        url = new URL(txt);
+    } catch(e: any) {
+        return { "name": "", "server": "" };
+    }
+
     let split_hostname = url.hostname.split(".");
     if(split_hostname.length < 3) 
         { throw Error("Invalid String"); }

@@ -1,7 +1,7 @@
 import { type Object } from "@/lib/PodAPIClient";
 import { getSession } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
-import { client } from "@/lib/sharedEEGClient";
+import { client } from "@/lib/sharedServiceCatalogueClient";
 import * as config from "@/lib/config";
 
 export async function GET(req: NextRequest) {
@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     if(Number.isNaN(page))
         page = 1;
 
-    const COLLECTION = config.CATALOGUE_COLLECTION;
+    const COLLECTION = config.SERVICES_COLLECTION;
 
     let [fetched_data, parsed] = await client.get_objects(parseInt(COLLECTION), page);
     

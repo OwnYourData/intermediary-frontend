@@ -15,6 +15,10 @@ const pages: PageMeta[] = [
         path: "/data",
     },
     {
+        name: "Service Catalogue",
+        path: "/services",
+    },
+    {
         name: "My Contracts",
         path: "/contracts",
     },
