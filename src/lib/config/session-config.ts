@@ -25,6 +25,7 @@ export interface SessionData {
     is_verified: boolean;
     state_token?: string;
     email_token?: string;
+    next_url?: string;
 }
 
 // default values for sessions

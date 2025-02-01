@@ -186,9 +186,19 @@ export default class PodAPIClient {
         let res = await this.fetch(`${this.base_url}/collection/${collection_id}/objects?page=${page_id}`);
         let headers = res.headers;
         let parsed_headers = this.parse_headers(headers);
+        
+        let text = await res.text();
 
-        let json: Object[] = await res.json();
-        return [json, parsed_headers];
+        try {
+            let json = JSON.parse(text);
+            return [json, parsed_headers];
+        } catch(e: any) {
+            return [{
+                "error": "Could not parse server response",
+                "res": text,
+                "code": res.status
+            }, []];
+        }
     }
 
     async get_object(object_id: number) {
@@ -248,6 +258,67 @@ export default class PodAPIClient {
         };
 
         let res = await this.fetch(`${this.base_url}/api/d3a_submit`, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+                'content-type': 'application/json'
+            }
+        });
+
+        let json: any = await res.json();
+        Object.assign(json, { "status_code": res.status });
+        return json;
+    }
+
+    async delete_catalogue_entry(object_id: string, user_id: string) {
+        let body = {
+            "type": "catalog",
+            "id": object_id,
+            "user": user_id
+        };
+
+        let res = await this.fetch(`${this.base_url}/api/delete`, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+                'content-type': 'application/json'
+            }
+        });
+
+        let json: any = await res.json();
+        Object.assign(json, { "status_code": res.status });
+        return json;
+    }
+
+    async delete_contract(object_id: string, user_id: string) {
+        let body = {
+            "type": "contract",
+            "id": object_id,
+            "user": user_id
+        };
+
+        let res = await this.fetch(`${this.base_url}/api/delete`, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+                'content-type': 'application/json'
+            }
+        });
+
+        let json: any = await res.json();
+        Object.assign(json, { "status_code": res.status });
+        return json;
+    }
+
+    async delete_log(object_id: string, log_id: string, user_id: string) {
+        let body = {
+            "type": "log",
+            "id": object_id,
+            "log-id": log_id,
+            "user": user_id
+        };
+
+        let res = await this.fetch(`${this.base_url}/api/delete`, {
             method: "POST",
             body: JSON.stringify(body),
             headers: {
