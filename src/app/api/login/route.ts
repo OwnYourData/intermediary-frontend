@@ -6,20 +6,24 @@ import { NextRequest } from "next/server";
 // when in doubt, just redirect the user to `/api/login` and they will be forced to login if they aren't
 
 export async function GET(req: NextRequest) {
-    let nextUrl = req.nextUrl.searchParams.get("next") ?? '/';
-
     let session = await getSession();
+    if(!session.next_url)
+        session.next_url = req.nextUrl.searchParams.get("next") ?? '/';
+    await session.save();
+    
+    let nextUrl = session.next_url;
 
-    if(!session.is_logged_in)  // did you not go through id austria yet?
-        { return redirect("/api/idaustria/init"); }  // then do that first
+    if(!session.is_logged_in) {  // did you not go through login?
+        if(req.nextUrl.searchParams.get("target") === "wallet") {
+            // TODO
+        } else return redirect("/api/idaustria/init"); 
+    }  // then do that first
 
     // did you go through id austra and don't have a verified email?
     // (this usualy means user just got redirected back from /api/idaustria/callback)
     if(session.is_logged_in && !session.is_verified) {  
         let user = await prisma.user.findUnique({  // let's check if you're in the database
-            where: {
-                bPK: session.user!!.bPK
-            }
+            where: { bPK: session.user!!.bPK }
         });
 
         // no? then let's create you
@@ -37,13 +41,30 @@ export async function GET(req: NextRequest) {
         if(user.email) {
             session.is_verified = true;  // you're verified
             await session.save();
-            return redirect('/api/login');  // go through this whole spiel again
+            return redirect(`/api/login`);  // go through this whole spiel again
         } else  // no? then go verify it!
             { return redirect("/email/form"); }
     }
 
-    if(session.is_logged_in && session.is_verified)  // did you go through id austria and have a verified email?
-        { return redirect(nextUrl); }  // then goodbye, you have no business here anymore
+    if(session.is_logged_in && session.is_verified) { // did you go through id austria and have a verified email?
+        session.next_url = undefined;
+        await session.save();
+
+        let user = await prisma.user.findUnique({
+            where: { bPK: session.user!!.bPK },
+            include: { current_did: true }
+        });
+
+        // expire DID if its become invalid
+        if(user!!.current_did) {
+            let now = Date.now();
+            let expire = Math.floor(user!!.current_did.valid_until.getTime() / 1000);
+            if(expire - now < 0)
+                await prisma.walletDID.delete({ where: { did: user!!.current_did.did } });
+        }
+
+        return redirect(nextUrl);
+    }  // then goodbye, you have no business here anymore
 
 
     // if an user somehow manages to end up here, someone fucked something very up
