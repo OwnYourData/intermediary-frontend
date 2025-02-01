@@ -15,8 +15,16 @@ datasource db {
 
 model User {
   bPK           String      @id @unique
-  email         String?
+  email         String?     @unique
   given_name    String
   last_name     String
   postcode      String
+  current_did   WalletDID?
+}
+
+model WalletDID {
+  did           String      @id @unique
+  valid_until   DateTime
+  user          User        @relation(fields: [bPK], references: [bPK], onDelete: Cascade, onUpdate: Cascade)
+  bPK           String      @unique
 }
