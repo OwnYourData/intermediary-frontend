@@ -1,37 +1,71 @@
 import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { NextRequest, NextResponse } from "next/server";
+import * as config from "@/lib/config";
+import { redirect } from "next/navigation";
+import { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 
+interface TokenData {
+  "state": string;
+  "bpk": string;
+  did: string | undefined;
+  "valid-until": string | undefined;
+}
 
-export async function POST(req: NextRequest) {
+export async function GET(req: NextRequest) {
     let session = await getSession();
-    let json = await req.json();   
-    let json_keys = Object.keys(json);
-
-    NextResponse.redirect("", { status: 302 });
-
     if(!(session.is_logged_in && session.is_verified))
-        { return NextResponse.redirect("/api/login?next=/user/profile", { status: 302 }); }
+        { return redirect("/api/login?next=/user/profile"); }
+    
+    let sp = new URL(req.url).searchParams;
+
+    // no token means someone thought "hey let's just open that page and see what happens"
+    let jwt = sp.get('token');
+    if(jwt === null)  // "leave!!", that's what happens
+        { return redirect("/user/profile"); }
+
+    const pubkey = config.JWT_PUBKEY;
+
+    let json;
+    try {
+        let { payload } = await jwtVerify(jwt, pubkey);
+        json = payload as any as TokenData;
+    }
+    catch(e: any)
+      { return redirect("/user/profile"); };
+
+    const json_keys = Object.keys(json);
 
     if(!(  // if any of these keys are missing we have a REEEALLY funny person doing the request
         json_keys.includes("state") &&
-        json_keys.includes("user-id")
-    )) { return NextResponse.redirect("/user/profile", { status: 302 }); }  // yeah no you're also not getting anywhere :3
-    
+        json_keys.includes("bpk")
+    )) { return redirect("/user/profile"); }  // yeah no you're also not getting anywhere :3
+
     if(!session.state_token) // without this property we're also not getting anywhere
-        { return NextResponse.redirect("/user/profile", { status: 302 }); }  // get out
+        { return redirect("/user/profile"); }  // get out
 
     const json_state = json["state"];
     let csrf_value = session.state_token;
 
-    if(csrf_value !== json_state)  // state mismatch means bad
-        { return NextResponse.redirect("/user/profile", { status: 302 }); }  // get out now
+    if(csrf_value !== json_state || 
+       session.user!!.bPK !== json["bpk"])  // state or user mismatch means bad
+        { return redirect("/user/profile"); }  // get out now
+
+    session.state_token = undefined;
+    await session.save();
 
     if(!json_keys.includes("did") || !json_keys.includes("valid-until"))
-        { return NextResponse.redirect("/user/profile", { status: 302 }); }
+        { return redirect("/user/profile"); }
 
-    let did = json["did"];
+    let did = json["did"]!!;
     let valid_until = new Date(json["valid-until"]!!);
+
+    // delete old DID if exists
+    await prisma.walletDID.deleteMany({
+        where: {
+            bPK: session.user!!.bPK
+        }
+    });
 
     // create WalletDID in DB
     await prisma.walletDID.create({
@@ -44,6 +78,6 @@ export async function POST(req: NextRequest) {
         }
     });
 
-    return NextResponse.redirect("/user/profile");  // only now did the user make it
+    return redirect("/user/profile"); // only now did the user make it
 }
 

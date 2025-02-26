@@ -1,9 +1,15 @@
 import { prisma } from "@/lib/db";
 import { getSession, logout } from "@/lib/session";
 import { redirect } from "next/navigation";
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import * as config from "@/lib/config";
 
 // when in doubt, just redirect the user to `/api/login` and they will be forced to login if they aren't
+
+interface QrTokenData {
+  qr: string;
+  id: string;
+}
 
 export async function GET(req: NextRequest) {
     let session = await getSession();
@@ -14,9 +20,23 @@ export async function GET(req: NextRequest) {
     let nextUrl = session.next_url;
 
     if(!session.is_logged_in) {  // did you not go through login?
-        if(req.nextUrl.searchParams.get("target") === "wallet") {
-            // TODO
-        } else return redirect("/api/idaustria/init"); 
+        if(req.nextUrl.searchParams.get("with") === "wallet") {
+            let res = await fetch(config.QR_LOGIN_URL);
+            let json: QrTokenData = await res.json();
+            
+            session.state_token = json.id;
+            await session.save();
+
+            return new NextResponse(json.qr, {
+                headers: { "Content-Type": "text/plain" }
+            });
+        } else return new NextResponse(JSON.stringify({"goto": "/api/idaustria/init"}), {
+            status: 307,
+            headers: {
+                "Location": "/api/idaustria/init",
+                "Content-Type": "application/json"
+            }
+        });
     }  // then do that first
 
     // did you go through id austra and don't have a verified email?
@@ -58,7 +78,7 @@ export async function GET(req: NextRequest) {
         // expire DID if its become invalid
         if(user!!.current_did) {
             let now = Date.now();
-            let expire = Math.floor(user!!.current_did.valid_until.getTime() / 1000);
+            let expire = user!!.current_did.valid_until.getTime();
             if(expire - now < 0)
                 await prisma.walletDID.delete({ where: { did: user!!.current_did.did } });
         }

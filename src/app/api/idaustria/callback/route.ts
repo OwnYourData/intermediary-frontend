@@ -1,6 +1,8 @@
 import { SessionData, UserData } from "@/lib/config/session-config";
+import * as config from "@/lib/config";
 import { getSession } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
+import { jwtVerify } from "jose";
 
 function render_result(status: string) {
     return`
@@ -23,6 +25,14 @@ const authorized = () => new NextResponse(render_result('auth'), {
     headers: { 'content-type': 'text/html;charset=utf-8' }
 });
 
+interface TokenData {
+  state: string;
+  given_name: string;
+  family_name: string;
+  "urn:pvpgvat:oidc.bpk": string;
+  "org.iso.18013.5.1:resident_postal_code": string;
+}
+
 export async function GET(req: NextRequest) {
     let session = await getSession();
     let sp = new URL(req.url).searchParams;
@@ -31,10 +41,15 @@ export async function GET(req: NextRequest) {
     let jwt = sp.get('token');
     if(jwt === null)  // "leave!!", that's what happens
         { return unauthorized(); }
+    
+    const pubkey = config.JWT_PUBKEY;
 
-    const [headerEncoded, payloadEncoded, signature] = jwt.split('.');  // TODO: Implement Signing Check, although I think Christoph strips all signature stuff from the JWT
-    const payloadJson = Buffer.from(payloadEncoded, 'base64url').toString('utf-8');
-    const payload = JSON.parse(payloadJson);  // parse payload
+    let payload;
+    try 
+      { payload = (await jwtVerify(jwt, pubkey)).payload as any as TokenData; }
+    catch(e: any)
+      { return unauthorized(); };
+    
     const payload_keys = Object.keys(payload);
 
     if(!(  // if any of these keys are missing we have a REEEALLY funny person doing the request
