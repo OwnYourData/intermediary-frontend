@@ -58,18 +58,36 @@ export default async function UserProfile() {
             onClick={resetEmail}
         >Change E-Mail Address</button>
         
-        <label className="block text-black dark:text-white text-sm font-extrabold mb-1" htmlFor="wallet">Wallet</label>
+        <label className="block text-black dark:text-white text-sm font-extrabold mb-1" htmlFor="bpk">Area-specific personal identifier</label>
+        <input
+            className="shadow appearance-none border rounded w-1/3 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline disabled:bg-gray-100 mb-2 mr-4"
+            disabled={true}
+            placeholder="if you see this shout really loudly"
+            name="bPK"
+            type="bPK"
+            value={user.bPK}
+        />
+
+        <label className="block pt-2 text-black dark:text-white text-xl font-extrabold mb-1" htmlFor="wallet">Wallet</label>
         <div id="wallet">
-            { !user.current_did &&
-                <button
-                    className={Default}
-                    onClick={linkWallet}
-                >Link Wallet</button>
-            }
             { !!user.current_did && <>
                 <p>Link valid until <FormattedDate date={user.current_did.valid_until} /></p>
+                <label className="block text-black dark:text-white text-sm font-extrabold mb-1" htmlFor="did">Decentralised Identity (DID)</label>
+                <input
+                    className="shadow appearance-none border rounded w-1/3 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline disabled:bg-gray-100 mb-2 mr-4"
+                    disabled={true}
+                    placeholder="if you see this shout really loudly"
+                    name="did"
+                    type="did"
+                    value={user.current_did.did}
+                />
+                <p className={Default + " w-fit inline"}><a href={`https://dev.uniresolver.io/#${user.current_did.did}`}>Show at Uniresolver</a></p>
             </>}
+            <br />
+            <button
+                className={Default}
+                onClick={linkWallet}
+            >Connect Wallet</button>
         </div>
-
     </div>;
 }
