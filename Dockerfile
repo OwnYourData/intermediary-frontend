@@ -1,10 +1,11 @@
-FROM node:20-alpine
+FROM node:20-alpine as deps
 
 RUN apk add --no-cache libc6-compat git
 
 # Setup pnpm environment
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
+RUN npm i -g corepack@latest
 RUN corepack enable
 RUN corepack prepare pnpm@latest --activate
 
@@ -13,6 +14,27 @@ WORKDIR /app
 # Install deps
 COPY package.json ./
 RUN pnpm install
+
+
+## builder
+FROM node:20-alpine as build
+
+RUN apk add --no-cache libc6-compat git
+
+# Setup pnpm environment
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+COPY --from=deps /pnpm /pnpm
+RUN npm i -g corepack@latest
+RUN corepack enable
+RUN corepack prepare pnpm@latest --activate
+
+
+WORKDIR /app
+
+COPY package.json ./
+RUN mkdir node_modules
+COPY --from=deps /app/node_modules/. node_modules/.
 
 COPY . .
 
@@ -27,7 +49,28 @@ RUN pnpm exec prisma generate
 # build
 RUN pnpm build
 
-RUN cp -rf /app/.next/standalone/. /app
+
+## dist
+FROM node:20-alpine as dist
+
+RUN apk add --no-cache libc6-compat git
+
+# Setup pnpm environment
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+COPY --from=deps /pnpm /pnpm
+RUN npm i -g corepack@latest
+RUN corepack enable
+RUN corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+COPY package.json ./
+COPY prisma/ ./prisma/
+COPY --from=deps /app/node_modules ./node_modules/
+COPY --from=build /app/.next ./.next/
+COPY --from=build /app/.next/standalone/. .
+COPY --from=build /app/public ./public/
 
 # Expose port
 EXPOSE 3000
