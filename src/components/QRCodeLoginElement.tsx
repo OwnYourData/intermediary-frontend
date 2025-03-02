@@ -24,13 +24,13 @@ export default function QRCodeLoginElement() {
     return () => clearInterval(itv);
   }, []);
 
-  let element = <p className="text-black">Loading ...</p>;
-
+  let element = <p className="dark:text-black">Loading ...</p>;
+  
   if(qrCodeContent !== "")
     element = <QRCodeSVG value={qrCodeContent} height={250} width={250} />;
 
-  return <div className="px-4 pb-4 pt-2 bg-slate-800 rounded-sm inline-block text-center">
-    <p className="font-bold">Sign in with your Wallet</p>
+  return <div className="px-4 pb-4 pt-2 bg-slate-700 dark:bg-slate-800 rounded-md inline-block text-center">
+    <p className="font-bold text-white">Sign in with your Wallet</p>
     <div className="p-2 mt-2 mx-auto bg-white rounded-md w-fit">{element}</div>
   </div>;
 }
