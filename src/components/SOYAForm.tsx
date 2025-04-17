@@ -8,11 +8,11 @@ const BASE_URL = "https://soya-form.ownyourdata.eu/?";
 export default function SOYAForm({
     schema,
     data = null,
-    setNewData
+    setNewDataAction
 }: {
     schema: string
     data?: any,
-    setNewData: (data: any) => void
+    setNewDataAction: (data: any) => void
 }) {
     // we need to access the frame
     let ref = useRef<HTMLIFrameElement>(null);
@@ -40,7 +40,7 @@ export default function SOYAForm({
         };
 
         // if data updates come tell the parents
-        if(e.data?.type === "data" && ranOnce) setNewData(e.data?.evt.data);
+        if(e.data?.type === "data" && ranOnce) setNewDataAction(e.data?.evt.data);
     });
 
     // render frame

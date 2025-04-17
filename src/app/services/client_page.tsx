@@ -5,9 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import Loading from "./loading";
 import OpenRight from "../svg/OpenRight";
-import Drawer from "./Drawer";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { fetchObjects } from "./requests";
+import { fetchEntries } from "./actions";
+import ObjectDrawer from "@/components/ObjectDrawer";
 
 
 let queryClient = new QueryClient({});
@@ -44,8 +44,8 @@ export function ServicesClient() {
         data,
         error
     } = useQuery({
-        queryKey: ["eeg_objects", { "page": page_int }],
-        queryFn: async () => { return await fetchObjects(page_int); }
+        queryKey: ["services", { "page": page_int }],
+        queryFn: async () => { return await fetchEntries(page_int); }
     });
 
     let [soyaData, setSoyaData] = useState<any>(null);  // contains object id, name and schema if drawer is shown
@@ -62,7 +62,7 @@ export function ServicesClient() {
             rtr.prefetch(`/services?page=${id}`);
     }
     function redirect(page_id: number) {
-        queryClient.invalidateQueries({ queryKey: ["eeg_objects", { "page": page_int }] });
+        queryClient.invalidateQueries({ queryKey: ["services", { "page": page_int }] });
         rtr.replace(`/services?page=${page_id}`);
     }
 
@@ -74,8 +74,8 @@ export function ServicesClient() {
             first={data.pagination.relative_pages.first}
             curr={data.pagination.curr}
             last={data.pagination.relative_pages.last}
-            prev={!!data.pagination.relative_pages.prev ? data.pagination.relative_pages.prev : null}
-            next={!!data.pagination.relative_pages.next ? data.pagination.relative_pages.next : null}
+            prev={!!data.pagination.relative_pages.prev ? data.pagination.relative_pages.prev : undefined}
+            next={!!data.pagination.relative_pages.next ? data.pagination.relative_pages.next : undefined}
         />;
     }
 
@@ -83,7 +83,7 @@ export function ServicesClient() {
         <h1 className="pb-4 text-2xl font-bold">Service Catalogue</h1>
         
         {/* meta objects, only shown once needed */}
-        <Drawer soyaState={soyaData} onClose={() => setSoyaData(null)} />
+        <ObjectDrawer soyaState={soyaData} onClose={() => setSoyaData(null)} drawerType="service" />
 
         <div className="flex flex-row items-center">
             {/* Pagination */}

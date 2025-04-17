@@ -5,19 +5,17 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import Loading from "./loading";
 import OpenRight from "../svg/OpenRight";
-import EEGDrawer from "@/app/data/EEGDrawer";
+import ObjectDrawer from "@/components/ObjectDrawer";
 import D2AOverlay from "./D2AOverlay";
 import D3AOverlay from "./D3AOverlay";
-import { Default, Purple } from "@/components/Buttons";
+import { Purple } from "@/components/Buttons";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { fetchObjects, fetchServices } from "./requests";
-import DropdownTile from "@/components/DropdownTile";
-
+import { fetchEntries } from "./actions";
 
 let queryClient = new QueryClient({});
 
 
-function MyDataRow({
+function DataCatalogueRow({
     name,
     onMoreInfoClick,
     onAccessClick
@@ -35,15 +33,8 @@ function MyDataRow({
     </tr>;
 }
 
-export function MyDataClient() {
+export function DataCatalogueClient() {
     let rtr = useRouter();
-
-    const BUTTON_CLASS = "block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-[100%] text-left";
-
-    const servicesQueryResponse = useQuery({
-        queryKey: ["services"],
-        queryFn: async () => { return await fetchServices(); }
-    });
 
     /* figure out which page we're on */
     const sp = useSearchParams();
@@ -58,18 +49,17 @@ export function MyDataClient() {
         data,
         error
     } = useQuery({
-        queryKey: ["eeg_objects", { "page": page_int }],
-        queryFn: async () => { return await fetchObjects(page_int); }
+        queryKey: ["catalogue", { "page": page_int }],
+        queryFn: async () => { return await fetchEntries(page_int); }
     });
 
     let [soyaData, setSoyaData] = useState<any>(null);  // contains object id, name and schema if drawer is shown
-    let [D2AData, setD2AData] = useState<any>(null);    // a schema if we should overlay
     let [D3AData, setD3AData] = useState<any>(null);    // contains an object id and schema if we should show
 
-    if(isPending || servicesQueryResponse.isPending)  // if there's a pending query we can show Loading
+    if(isPending)  // if there's a pending query we can show Loading
         { return <Loading />; }
 
-    if(isError || servicesQueryResponse.isError)  // if there's an error we show it
+    if(isError)  // if there's an error we show it
         { return <span>Error: {error?.message}</span>; }
 
     // util functions for the Page Indicator
@@ -78,7 +68,7 @@ export function MyDataClient() {
             rtr.prefetch(`/data?page=${id}`);
     }
     function redirect(page_id: number) {
-        queryClient.invalidateQueries({ queryKey: ["eeg_objects", { "page": page_int }] });
+        queryClient.invalidateQueries({ queryKey: ["catalogue", { "page": page_int }] });
         rtr.replace(`/data?page=${page_id}`);
     }
 
@@ -90,8 +80,8 @@ export function MyDataClient() {
             first={data.pagination.relative_pages.first}
             curr={data.pagination.curr}
             last={data.pagination.relative_pages.last}
-            prev={!!data.pagination.relative_pages.prev ? data.pagination.relative_pages.prev : null}
-            next={!!data.pagination.relative_pages.next ? data.pagination.relative_pages.next : null}
+            prev={!!data.pagination.relative_pages.prev ? data.pagination.relative_pages.prev : undefined}
+            next={!!data.pagination.relative_pages.next ? data.pagination.relative_pages.next : undefined}
         />;
     }
 
@@ -99,20 +89,16 @@ export function MyDataClient() {
         <h1 className="pb-4 text-2xl font-bold">Data Catalogue</h1>
         
         {/* meta objects, only shown once needed */}
-        <D2AOverlay open={!!D2AData} onClose={() => setD2AData(null)} schema={D2AData} />
         <D3AOverlay open={!!D3AData} onClose={() => setD3AData(null)} object_data={D3AData} />
-        <EEGDrawer soyaState={soyaData} onClose={() => setSoyaData(null)} />
+        <ObjectDrawer
+          soyaState={soyaData}
+          onClose={() => setSoyaData(null)}
+          drawerType="data"
+        />
 
         <div className="flex flex-row items-center">
             {/* Pagination */}
             { sharedPageIndicator }
-            {/* Add Data Button */}
-            <DropdownTile
-                buttonContent={<span>Add Data</span>}
-                buttonClassName={Default}
-            >{(servicesQueryResponse.data as any[]).map((el, i) =>
-                <button onClick={() => setD2AData(el.d2a)} key={i} className={BUTTON_CLASS}>{el.name}</button>)}
-            </DropdownTile>
         </div>
 
         {/* Content */}
@@ -126,32 +112,26 @@ export function MyDataClient() {
             <tbody>
                 { (data.data as any[])  // hehe intellisense :)
                     .map((el, i) => {
+                        console.log(el);
                         let onAccessClick = null;
                         let onMoreInfoClick = null;
 
-                        if(Object.keys(el).includes("object-id")) {
+                        if(Object.keys(el).includes("object-id") && false) {
                             // filter d2a == current_schema, so we can
                             // get the correct d3a for the "Access" button
-                            let tmp = (servicesQueryResponse.data as any[])
-                                .filter(e => e["d2a"] == el["schema"]);
-
-                            let d3a_schema = undefined;
-                            if(tmp.length != 0)
-                                d3a_schema = tmp[0].d3a;
-
                             onAccessClick = () => setD3AData({
                                 "object_id": el["object-id"],
-                                "schema": d3a_schema
+                                "schema": "D3Aeeg"
                             });
                             onMoreInfoClick = () => setSoyaData({
                                 id: el["object-id"],
                                 name: el.name,
                                 schema: el.schema,
                                 type: "object"
-                            });  
+                            });
                         }
 
-                        return <MyDataRow
+                        return <DataCatalogueRow
                             key={i}
                             onAccessClick={onAccessClick}
                             onMoreInfoClick={onMoreInfoClick}
@@ -165,8 +145,8 @@ export function MyDataClient() {
 }
 
 // Provide QueryClient to page
-export default function ProvideQueryClientToMyDataClient() {
+export default function ProvideQueryClientToDataCatalogueClient() {
     return <QueryClientProvider client={queryClient}>
-        <MyDataClient />
+        <DataCatalogueClient />
     </QueryClientProvider>;
 }

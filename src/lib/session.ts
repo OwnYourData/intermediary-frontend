@@ -61,3 +61,8 @@ export async function enforceNoAuthAndVerify() {  // enforce that the user is lo
 
     return !(session.is_logged_in && session.is_verified) ? null : redirect(LOGIN_PATH);
 }
+
+export async function isAuthorized() {
+    let session = await getSession();
+    return session.is_verified;
+}

@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
@@ -11,14 +11,14 @@
     "db_sync": "prisma migrate deploy"
   },
   "dependencies": {
-    "@prisma/client": "^6.4.1",
+    "@prisma/client": "^6.6.0",
     "@react-email/components": "^0.0.22",
     "@react-email/link": "^0.0.9",
-    "@tanstack/react-query": "^5.66.9",
+    "@tanstack/react-query": "^5.74.3",
     "iron-session": "^8.0.4",
     "jose": "^5.10.0",
-    "next": "^15.1.7",
-    "nodemailer": "^6.10.0",
+    "next": "^15.3.0",
+    "nodemailer": "^6.10.1",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -26,15 +26,15 @@
   },
   "devDependencies": {
     "@types/cookie": "^0.6.0",
-    "@types/node": "^20.17.19",
+    "@types/node": "^20.17.30",
     "@types/nodemailer": "^6.4.17",
-    "@types/react": "^18.3.18",
-    "@types/react-dom": "^18.3.5",
+    "@types/react": "^18.3.20",
+    "@types/react-dom": "^18.3.6",
     "eslint": "^8.57.1",
-    "eslint-config-next": "^15.1.7",
+    "eslint-config-next": "^15.3.0",
     "postcss": "^8.5.3",
-    "prisma": "^6.4.1",
+    "prisma": "^6.6.0",
     "tailwindcss": "^3.4.17",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   }
 }

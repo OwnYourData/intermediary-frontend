@@ -1,5 +1,3 @@
-import { PodMeta } from "./config/pods";
-
 export interface CachedToken {
     token: string;
     expires_at: number;
@@ -44,6 +42,29 @@ export interface ObjectDetail {
     'object-id': number;
     'collection-id': number;
     name: string;
+}
+
+export interface PodMeta {
+    server: string,
+    name: string
+}
+
+export function podmeta_from_string(txt: string): PodMeta {
+    let url;
+    try {
+        url = new URL(txt);
+    } catch(e: any) {
+        return { "name": "", "server": "" };
+    }
+
+    let split_hostname = url.hostname.split(".");
+    if(split_hostname.length < 3) 
+        { throw Error("Invalid String"); }
+
+    return {
+        "name": split_hostname.shift()!!,
+        "server": split_hostname.join(".")
+    };
 }
 
 export default class PodAPIClient {
@@ -132,8 +153,9 @@ export default class PodAPIClient {
         
         let json = await res.json();
 
-        if(!json["access_token"])
-            { return; }
+        if(!json["access_token"]) {
+            throw Error("Failed authenticating to backend!!");
+        }
 
         // cache the token
         let token: CachedToken = {
@@ -177,7 +199,7 @@ export default class PodAPIClient {
     }
 
     async get_collection(collection_id: number) {
-        let res = await this.fetch(`${this.base_url}/collection/${collection_id}/list`);
+        let res = await this.fetch(`${this.base_url}/collection/${collection_id}`);
         let json: CollectionDetail = await res.json();
         return json;
     }
@@ -218,117 +240,4 @@ export default class PodAPIClient {
         let json: any = await res.json();
         return json;
     }
-
-    async get_logs(user_id: string) {
-        let res = await this.fetch(`${this.base_url}/logs/${user_id}`);
-        let json: any = await res.json();
-        return json;
-    }
-
-    async get_contracts(user_id: string) {
-        let res = await this.fetch(`${this.base_url}/contracts/${user_id}`);
-        let json: any = await res.json();
-        return json;
-    }
-
-    async submit_d2a(form_data: any, user_id: string) {
-        let body = {
-            user_id,
-            "data": form_data
-        };
-
-        let res = await this.fetch(`${this.base_url}/api/d2a_submit`, {
-            method: "POST",
-            body: JSON.stringify(body),
-            headers: {
-                'content-type': 'application/json'
-            }
-        });
-
-        let json: any = await res.json();
-        Object.assign(json, { "status_code": res.status });
-        return json;
-    }
-
-    async submit_d3a(form_data: any, object_id: string, user_id: string) {
-        let body = {
-            user_id,
-            object_id,
-            "data": form_data
-        };
-
-        let res = await this.fetch(`${this.base_url}/api/d3a_submit`, {
-            method: "POST",
-            body: JSON.stringify(body),
-            headers: {
-                'content-type': 'application/json'
-            }
-        });
-
-        let json: any = await res.json();
-        Object.assign(json, { "status_code": res.status });
-        return json;
-    }
-
-    async delete_catalogue_entry(object_id: string, user_id: string) {
-        let body = {
-            "type": "catalog",
-            "id": object_id,
-            "user": user_id
-        };
-
-        let res = await this.fetch(`${this.base_url}/api/delete`, {
-            method: "POST",
-            body: JSON.stringify(body),
-            headers: {
-                'content-type': 'application/json'
-            }
-        });
-
-        let json: any = await res.json();
-        Object.assign(json, { "status_code": res.status });
-        return json;
-    }
-
-    async delete_contract(object_id: string, user_id: string) {
-        let body = {
-            "type": "contract",
-            "id": object_id,
-            "user": user_id
-        };
-
-        let res = await this.fetch(`${this.base_url}/api/delete`, {
-            method: "POST",
-            body: JSON.stringify(body),
-            headers: {
-                'content-type': 'application/json'
-            }
-        });
-
-        let json: any = await res.json();
-        Object.assign(json, { "status_code": res.status });
-        return json;
-    }
-
-    async delete_log(object_id: string, log_id: string, user_id: string) {
-        let body = {
-            "type": "log",
-            "id": object_id,
-            "log-id": log_id,
-            "user": user_id
-        };
-
-        let res = await this.fetch(`${this.base_url}/api/delete`, {
-            method: "POST",
-            body: JSON.stringify(body),
-            headers: {
-                'content-type': 'application/json'
-            }
-        });
-
-        let json: any = await res.json();
-        Object.assign(json, { "status_code": res.status });
-        return json;
-    }
-
 }

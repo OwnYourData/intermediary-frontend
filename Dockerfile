@@ -1,4 +1,4 @@
-FROM node:20-alpine as deps
+FROM docker.io/node:20-alpine as deps
 
 RUN apk add --no-cache libc6-compat git
 
@@ -17,7 +17,7 @@ RUN pnpm install
 
 
 ## builder
-FROM node:20-alpine as build
+FROM docker.io/node:20-alpine as build
 
 RUN apk add --no-cache libc6-compat git
 
@@ -51,7 +51,7 @@ RUN pnpm build
 
 
 ## dist
-FROM node:20-alpine as dist
+FROM docker.io/node:20-alpine as dist
 
 RUN apk add --no-cache libc6-compat git
 

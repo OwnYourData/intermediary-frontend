@@ -2,16 +2,20 @@
 
 import { useState } from "react";
 import Loading from "./loading";
+import ObjectDrawer from "@/components/ObjectDrawer";
 import OpenRight from "../svg/OpenRight";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { deleteLog, fetchLogs } from "./actions";
-import ObjectDrawer from "@/components/ObjectDrawer";
-import { useSearchParams, useRouter } from "next/navigation";
+import { deleteAsset, fetchAssets, fetchPods } from "./actions";
+import DropdownTile from "@/components/DropdownTile";
+import { Default } from "@/components/Buttons";
 import PageIndicator from "@/components/PageIndicator";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const queryClient = new QueryClient();
 
-function LogsRow({
+const BUTTON_CLASS = "block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-[100%] text-left";
+
+function AssetsRow({
     name,
     onMoreInfoClick,
 }: {
@@ -26,7 +30,7 @@ function LogsRow({
     </tr>;
 }
 
-export function LogsClient() {
+export function AssetsClient() {
     let rtr = useRouter();
 
     // figure out which page we're on
@@ -37,30 +41,36 @@ export function LogsClient() {
         page_int = 1;
 
     let [drawerData, setDrawerData] = useState<any>(null);
+    const podsQueryResponse = useQuery({
+        queryKey: ["pods"],
+        queryFn: fetchPods
+    });
     const {
         isPending,
         isError,
         data,
         error 
     } = useQuery({
-        queryKey: ["logs", { "page": page_int }],
-        queryFn: async () => { return await fetchLogs(page_int); }
+        queryKey: ["assets", { "page": page_int }],
+        queryFn: async () => { return await fetchAssets(page_int); }
     });
 
-    if(isPending)
+    if(podsQueryResponse.isPending || isPending)
         { return <Loading />; }
 
+//    if(podsQueryResponse.isError)
+//        { return <span>Error: {podsQueryResponse.error?.message}</span>; }
     if(isError)
         { return <span>Error: {error?.message}</span>; }
 
     // util functions for the Page Indicator
     function pagination_prefetch(page_ids: number[]) {
         for(const id of page_ids)
-            rtr.prefetch(`/logs?page=${id}`);
+            rtr.prefetch(`/assets?page=${id}`);
     }
     function redirect(page_id: number) {
-        queryClient.invalidateQueries({ queryKey: ["logs", { "page": page_int }] });
-        rtr.replace(`/logs?page=${page_id}`);
+        queryClient.invalidateQueries({ queryKey: ["assets", { "page": page_int }] });
+        rtr.replace(`/assets?page=${page_id}`);
     }
 
     let sharedPageIndicator = <></>;
@@ -77,19 +87,21 @@ export function LogsClient() {
     }
 
     return <div>
-        <h1 className="pb-4 text-2xl font-bold">Logs</h1>
+        <h1 className="pb-4 text-2xl font-bold">My Assets</h1>
 
-        {/* deleteAction shows an error. this is fine. */}
-        <ObjectDrawer
-          soyaState={drawerData}
-          onClose={() => setDrawerData(null)}
-          deleteAction={deleteLog}
-          drawerType="log"
-        />
+        <ObjectDrawer soyaState={drawerData} onClose={() => setDrawerData(null)} deleteAction={deleteAsset} drawerType="asset" />
 
         <div className="flex flex-row items-center">
             {/* Pagination */}
             { sharedPageIndicator }
+
+            {/* Add Data Button }
+            <DropdownTile
+                buttonContent={<span>Add Data</span>}
+                buttonClassName={Default}
+            >{(podsQueryResponse.data as any[]).map((el, i) =>
+                <button onClick={() => console.log(el.d2a)} key={i} className={BUTTON_CLASS}>{el.name}</button>)}
+            </DropdownTile>*/}
         </div>
 
         {/* Content */}
@@ -104,10 +116,10 @@ export function LogsClient() {
                 { (data.data as any[])  // hehe intellisense :)
                     .map((el, i) => {
                             let onMoreInfoClick = null;
-                            if(Object.keys(el).includes("object-id") && el["display"] !== false)
-                                onMoreInfoClick = () => setDrawerData({id: el["object-id"], log_id: el["log-id"], name: el.name, schema: el.schema});
+                            if(Object.keys(el).includes("object-id"))
+                                onMoreInfoClick = () => setDrawerData({id: el["object-id"], name: el.name, schema: el.schema});
 
-                            return <LogsRow
+                            return <AssetsRow
                                 key={i}
                                 onMoreInfoClick={onMoreInfoClick}
                                 name={el.name}
@@ -120,6 +132,6 @@ export function LogsClient() {
     </div>;
 }
 
-export default function ProvideQueryClientToLogsClient() {
-    return <QueryClientProvider client={queryClient}><LogsClient /></QueryClientProvider>;
+export default function ProvideQueryClientToAssetsClient() {
+    return <QueryClientProvider client={queryClient}><AssetsClient /></QueryClientProvider>;
 }
