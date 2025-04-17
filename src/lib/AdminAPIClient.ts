@@ -42,6 +42,13 @@ export interface Pagination {
     curr: number;
 };
 
+export interface Pod {
+    id: number;
+    name: string;
+    d2a: string;
+    d3a: string;
+};
+
 export default class AdminAPIClient {
     client_id: string = ADMIN_CLIENT;
     client_secret: string = ADMIN_SECRET;
@@ -221,7 +228,7 @@ export default class AdminAPIClient {
 
     async get_pods() {
         let res = await this.fetch(`${this.base_url}/api/pods`);
-        let json: any = await res.json();
+        let json: Pod[] = await res.json();
         return json;
     }
 

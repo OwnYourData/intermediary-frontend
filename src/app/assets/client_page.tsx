@@ -10,6 +10,7 @@ import DropdownTile from "@/components/DropdownTile";
 import { Default } from "@/components/Buttons";
 import PageIndicator from "@/components/PageIndicator";
 import { useRouter, useSearchParams } from "next/navigation";
+import D2AOverlay from "./D2AOverlay";
 
 const queryClient = new QueryClient();
 
@@ -41,6 +42,8 @@ export function AssetsClient() {
         page_int = 1;
 
     let [drawerData, setDrawerData] = useState<any>(null);
+    let [D2AData, setD2AData] = useState<string>("");    // contains a schema if we should overlay
+
     const podsQueryResponse = useQuery({
         queryKey: ["pods"],
         queryFn: fetchPods
@@ -58,8 +61,8 @@ export function AssetsClient() {
     if(podsQueryResponse.isPending || isPending)
         { return <Loading />; }
 
-//    if(podsQueryResponse.isError)
-//        { return <span>Error: {podsQueryResponse.error?.message}</span>; }
+    if(podsQueryResponse.isError)
+        { return <span>Error: {podsQueryResponse.error?.message}</span>; }
     if(isError)
         { return <span>Error: {error?.message}</span>; }
 
@@ -89,19 +92,20 @@ export function AssetsClient() {
     return <div>
         <h1 className="pb-4 text-2xl font-bold">My Assets</h1>
 
+        <D2AOverlay open={!!D2AData} onClose={() => setD2AData("")} schema={D2AData} />
         <ObjectDrawer soyaState={drawerData} onClose={() => setDrawerData(null)} deleteAction={deleteAsset} drawerType="asset" />
 
         <div className="flex flex-row items-center">
             {/* Pagination */}
             { sharedPageIndicator }
 
-            {/* Add Data Button }
+            {/* Add Data Button */}
             <DropdownTile
                 buttonContent={<span>Add Data</span>}
                 buttonClassName={Default}
             >{(podsQueryResponse.data as any[]).map((el, i) =>
-                <button onClick={() => console.log(el.d2a)} key={i} className={BUTTON_CLASS}>{el.name}</button>)}
-            </DropdownTile>*/}
+                <button onClick={() => setD2AData(el.d2a)} key={i} className={BUTTON_CLASS}>{el.name}</button>)}
+            </DropdownTile>
         </div>
 
         {/* Content */}

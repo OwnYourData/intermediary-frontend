@@ -5,6 +5,7 @@ import Overlay from "@/components/Overlay";
 import SOYAForm from "@/components/SOYAForm";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { saveD3A } from "./actions";
 
 export default function D3AOverlay({
     onClose,
@@ -19,8 +20,7 @@ export default function D3AOverlay({
     const mutation = useMutation({
         mutationFn: (variables) => {
             let { data, object_id } = variables as any;
-            return;
-            return postD3A(data, object_id);
+            return saveD3A(data, object_id);
         },
         onSuccess: (data: any) => {
             alert(data["res"]["message"]);

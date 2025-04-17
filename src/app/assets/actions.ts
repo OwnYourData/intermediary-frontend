@@ -36,3 +36,11 @@ export async function deleteAsset(object_id: number) {
         throw Error("Deletion Failed");
     return r;
 }
+
+export async function saveD2A(data: any) {
+    let session = await getSession();
+    if(!session.is_verified || !session.user)
+        throw Error("no-auth");
+
+
+}

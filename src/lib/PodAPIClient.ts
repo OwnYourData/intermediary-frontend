@@ -152,7 +152,7 @@ export default class PodAPIClient {
         });
         
         let json = await res.json();
-
+        
         if(!json["access_token"]) {
             throw Error("Failed authenticating to backend!!");
         }

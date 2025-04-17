@@ -5,7 +5,7 @@ import Overlay from "@/components/Overlay";
 import SOYAForm from "@/components/SOYAForm";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { postD2A } from "./requests";
+import { saveD2A } from "./actions"; 
 
 export default function D2AOverlay({
     schema,
@@ -19,9 +19,10 @@ export default function D2AOverlay({
     const queryClient = useQueryClient();
     
     let [data, setData] = useState({});
+
     const mutation = useMutation({
-        mutationFn: postD2A,
-        onSuccess: (data) => {
+        mutationFn: saveD2A,
+        onSuccess: (data: any) => {
             queryClient.invalidateQueries({ queryKey: ["eeg_objects"] });
             alert(data["res"]["message"]);
         },
@@ -44,7 +45,11 @@ export default function D2AOverlay({
     
     return <Overlay open={open} onClose={onClose}>
         <h1 className="text-2xl pb-4">Add Data</h1>
-        <SOYAForm setNewData={setData} data={data} schema={schema} />
+        <SOYAForm
+          setNewDataAction={setData}
+          data={data}
+          schema={schema}
+        />
         <div className="pt-4 flex flex-row">
             <button className={Default + " w-[50%]"} onClick={destroy}>Cancel</button>
             <button className={Purple + " w-[50%]"} onClick={submit}>Submit</button>

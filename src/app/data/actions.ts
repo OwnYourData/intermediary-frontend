@@ -34,11 +34,26 @@ export async function deleteEntry(object_id: number) {
     let session = await getSession();
     if(!session.is_verified || !session.user)
         throw Error("no-auth");
-    
-    let r = await client.delete_object(object_id, session.user.bPK);
-    if(r["status_code"] != 200)
-      throw Error("Deletion Failed");
 
-    return r;
+    return;
 }
 
+export async function getD3AforD2A(d2a: string) {
+    let session = await getSession();
+    if(!session.is_verified || !session.user)
+        throw Error("no-auth");
+    
+    let pods = await client.get_pods();
+    for(const pod of pods) {
+        if(pod.d2a === d2a)
+            return pod.d3a;
+    }
+
+    return null;
+}
+
+export async function saveD3A(data: any, object_id?: number) {
+    let session = await getSession();
+    if(!session.is_verified || !session.user)
+        throw Error("no-auth");
+}

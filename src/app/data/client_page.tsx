@@ -6,7 +6,6 @@ import { useState } from "react";
 import Loading from "./loading";
 import OpenRight from "../svg/OpenRight";
 import ObjectDrawer from "@/components/ObjectDrawer";
-import D2AOverlay from "./D2AOverlay";
 import D3AOverlay from "./D3AOverlay";
 import { Purple } from "@/components/Buttons";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
