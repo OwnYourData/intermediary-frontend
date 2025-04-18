@@ -4,12 +4,11 @@ import { useState } from "react";
 import Loading from "./loading";
 import ObjectDrawer from "@/components/ObjectDrawer";
 import OpenRight from "../svg/OpenRight";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchContracts, deleteContract } from "./actions";
 import { useRouter, useSearchParams } from "next/navigation";
 import PageIndicator from "@/components/PageIndicator";
 
-const queryClient = new QueryClient();
 
 function ContractsRow({
     name,
@@ -26,8 +25,9 @@ function ContractsRow({
     </tr>;
 }
 
-export function ContractsClient() {
+export default function ContractsClient() {
     let rtr = useRouter();
+    let queryClient = useQueryClient();
 
     // figure out which page we're on
     const sp = useSearchParams();
@@ -85,7 +85,7 @@ export function ContractsClient() {
           soyaState={drawerData}
           onClose={() => setDrawerData(null)}
           deleteAction={deleteContract}
-          drawerType="contract"
+          drawerType="contracts"
         />
 
         <div className="flex flex-row items-center">
@@ -118,8 +118,4 @@ export function ContractsClient() {
             </tbody>
         </table>
     </div>;
-}
-
-export default function ProvideQueryClientToContractsClient() {
-    return <QueryClientProvider client={queryClient}><ContractsClient /></QueryClientProvider>;
 }

@@ -16,8 +16,8 @@ export async function fetchEntries(page: number) {
 
     for(const pod of r[0] as DataCatalogueEntry[]) {
         const meta = podmeta_from_string(pod.host);
-        console.log(pod);
         const podClient = new PodAPIClient(pod.key, pod.secret, meta);
+
         for(const collection of pod.collections) {
             const info = await podClient.get_collection(collection);
             data.push(info);
@@ -35,7 +35,6 @@ export async function deleteEntry(object_id: number) {
     if(!session.is_verified || !session.user)
         throw Error("no-auth");
 
-    return;
 }
 
 export async function getD3AforD2A(d2a: string) {

@@ -5,12 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import Loading from "./loading";
 import OpenRight from "../svg/OpenRight";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchEntries } from "./actions";
 import ObjectDrawer from "@/components/ObjectDrawer";
-
-
-let queryClient = new QueryClient({});
 
 
 function ServicesRow({
@@ -28,8 +25,9 @@ function ServicesRow({
     </tr>;
 }
 
-export function ServicesClient() {
+export default function ServicesClient() {
     let rtr = useRouter();
+    let queryClient = useQueryClient();
 
     /* figure out which page we're on */
     const sp = useSearchParams();
@@ -83,7 +81,7 @@ export function ServicesClient() {
         <h1 className="pb-4 text-2xl font-bold">Service Catalogue</h1>
         
         {/* meta objects, only shown once needed */}
-        <ObjectDrawer soyaState={soyaData} onClose={() => setSoyaData(null)} drawerType="service" />
+        <ObjectDrawer soyaState={soyaData} onClose={() => setSoyaData(null)} drawerType="services" />
 
         <div className="flex flex-row items-center">
             {/* Pagination */}
@@ -122,11 +120,4 @@ export function ServicesClient() {
             </tbody>
         </table>
     </div>;
-}
-
-// Provide QueryClient to page
-export default function ProvideQueryClientToServicesClient() {
-    return <QueryClientProvider client={queryClient}>
-        <ServicesClient />
-    </QueryClientProvider>;
 }

@@ -22,7 +22,8 @@
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-email": "^2.1.6"
+    "react-email": "^2.1.6",
+    "tailwind-scrollbar": "^4.0.2"
   },
   "devDependencies": {
     "@types/cookie": "^0.6.0",

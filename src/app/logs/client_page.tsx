@@ -3,13 +3,12 @@
 import { useState } from "react";
 import Loading from "./loading";
 import OpenRight from "../svg/OpenRight";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { deleteLog, fetchLogs } from "./actions";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteLog, fetchLog, fetchLogs } from "./actions";
 import ObjectDrawer from "@/components/ObjectDrawer";
 import { useSearchParams, useRouter } from "next/navigation";
 import PageIndicator from "@/components/PageIndicator";
 
-const queryClient = new QueryClient();
 
 function LogsRow({
     name,
@@ -26,8 +25,9 @@ function LogsRow({
     </tr>;
 }
 
-export function LogsClient() {
+export default function LogsClient() {
     let rtr = useRouter();
+    let queryClient = useQueryClient();
 
     // figure out which page we're on
     const sp = useSearchParams();
@@ -79,12 +79,12 @@ export function LogsClient() {
     return <div>
         <h1 className="pb-4 text-2xl font-bold">Logs</h1>
 
-        {/* deleteAction shows an error. this is fine. */}
         <ObjectDrawer
           soyaState={drawerData}
           onClose={() => setDrawerData(null)}
+          fetchAction={fetchLog}
           deleteAction={deleteLog}
-          drawerType="log"
+          drawerType="logs"
         />
 
         <div className="flex flex-row items-center">
@@ -118,8 +118,4 @@ export function LogsClient() {
             </tbody>
         </table>
     </div>;
-}
-
-export default function ProvideQueryClientToLogsClient() {
-    return <QueryClientProvider client={queryClient}><LogsClient /></QueryClientProvider>;
 }

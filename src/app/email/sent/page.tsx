@@ -1,4 +1,5 @@
 import { enforceAuthOnly } from "@/lib/session";
+import EmailVerifiedCheck from "./check_for_verified";
 
 export default async function EmailForm() {
     return await enforceAuthOnly() ?? <div className="align-middle">
@@ -7,5 +8,6 @@ export default async function EmailForm() {
             If you don&apos;t see it, please also look at your spam folder.<br />
         </h1>
         <p className="text-xl">The email has been sent from <i>{process.env.SMTP_FROM!!}</i>.</p>
+        <EmailVerifiedCheck />
     </div>;
 }

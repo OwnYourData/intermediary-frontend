@@ -6,7 +6,7 @@ import SOYAForm from "@/components/SOYAForm";
 import { Red } from "@/components/Buttons";
 import { fetchObject } from "@/lib/AdminAPIActions";
 
-export type DrawerType = "contract" | "asset" | "log" | "data" | "service";
+export type DrawerType = "contracts" | "assets" | "logs" | "data" | "services";
 
 export default function ObjectDrawer({
     soyaState,
@@ -18,8 +18,8 @@ export default function ObjectDrawer({
     soyaState: any,
     onClose: any,
     drawerType: DrawerType,
-    fetchAction?: (object_id: number) => any,
-    deleteAction?: (object_id: number, log_id?: string) => any
+    fetchAction?: (object_id: any) => Promise<any>,
+    deleteAction?: (object_id: any, log_id?: any) => Promise<any>
 }) {
     let queryClient = useQueryClient();
 
@@ -33,7 +33,7 @@ export default function ObjectDrawer({
         data,
         error
     } = useQuery({
-        queryKey: ["eeg_object_spec", object_id],
+        queryKey: [`${drawerType}_spec`, object_id],
         queryFn: async () => { return await fetchAction(object_id); },
         enabled: open
     }); 
@@ -43,14 +43,13 @@ export default function ObjectDrawer({
             if(!deleteAction) throw Error("Object not deletable");
 
             let { object_id, log_id } = variables as any;
-            if(drawerType == "log") return deleteAction(object_id, log_id);
+            if(drawerType == "logs") return deleteAction(object_id, log_id);
             return deleteAction(object_id);
         },
         onSuccess: (data: any) => {
-            queryClient.invalidateQueries({ queryKey: ["eeg_objects"] });
-            queryClient.invalidateQueries({ queryKey: ["contracts"] });
-            queryClient.invalidateQueries({ queryKey: ["logs"] });
-            queryClient.invalidateQueries({ queryKey: ["eeg_object_spec", object_id] });
+            queryClient.invalidateQueries({ queryKey: [drawerType] });
+            queryClient.invalidateQueries({ queryKey: [`${drawerType}_spec`, object_id] });
+            queryClient.invalidateQueries({ queryKey: ["logs"] }); // there is probably a new log now
             onClose();
 
             if(

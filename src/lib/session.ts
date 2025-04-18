@@ -4,6 +4,7 @@ import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { defaultSession, SessionData, sessionOptions } from "./config/session-config";
+import { experimental_taintObjectReference } from "react";
 
 const LOGIN_PATH = "/api/login";
 
@@ -17,6 +18,8 @@ export async function getSession() {
         if(!session_keys.includes(s_key))  // if the key is not in the actual session
             Object.assign(session, {s_key: defaultSession[s_key]}); // assign the default
     }
+
+    experimental_taintObjectReference("Session should really not land on the client", session);
 
     return session;
 }

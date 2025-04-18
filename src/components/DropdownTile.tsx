@@ -28,7 +28,14 @@ export default function DropdownTile({
             <span>{buttonContent}</span>
             <OpenUp />
         </button>
-        <div id="dropdown" onMouseOver={() => keepOpen = true} onMouseLeave={() => keepOpen = false} className={"z-10 mt-3 m-0 bg-white divide-y divide-gray-100 rounded-lg shadow w-full dark:bg-slate-700 absolute" + " " + hidden}>
+        <div
+          id="dropdown"
+          onMouseOver={() => keepOpen = true}
+          onMouseLeave={() => keepOpen = false}
+          className={
+            "z-10 mt-3 m-0 bg-white divide-y divide-gray-100 rounded-lg shadow w-full dark:bg-slate-700 absolute" + " " +
+            "max-h-[45vh] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100" + " " + hidden}
+        >
             <ul className="py-2 text-sm text-gray-700 dark:text-gray-200">{children}</ul>
         </div>
 

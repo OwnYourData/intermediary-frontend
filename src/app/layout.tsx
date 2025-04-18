@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import TopBar from "@/components/TopBar";
 import SideBar from "@/components/SideBar";
+import QueryClientProvider from "@/providers/QueryClientProvider";
 
 const inter = Inter({
     subsets: ["latin"],
@@ -26,7 +27,9 @@ export default function RootLayout({
                 {/* We only show this on large screens */}
                 <SideBar />
                 <main className="flex flex-col p-12 w-full">
-                    {children}
+                    <QueryClientProvider>
+                        {children}
+                    </QueryClientProvider>
                 </main>
             </div>
         </body>

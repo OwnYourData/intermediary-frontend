@@ -22,7 +22,6 @@ export async function fetchPods() {
         throw Error("no-auth");
 
     let r = await client.get_pods();
-    console.log(r);
     return r;
 }
 

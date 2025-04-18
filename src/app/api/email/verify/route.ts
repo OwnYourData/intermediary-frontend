@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     let sp = req.nextUrl.searchParams;
     let spField = sp.get('token');
 
-    let session_token = session.email_token;
+    let session_token = session.email_token; // TODO: AGAIN, REDIS IS BETTER
     session.email_token = undefined;
     await session.save();
 
@@ -74,12 +74,12 @@ export async function POST(req: NextRequest) {
 
     let e = urlencode_email(emailField?.toString());  // we encode the email,
     let rand_bytes = crypto.randomBytes(128).toString('hex');   // we generate a looooong token,
-    let token = `${e}::${rand_bytes}`; // save it into the session,
+    let token = `${e}::${rand_bytes}`; // save it into the session, // TODO: THIS IS SHIT. USE REDIS
     session.email_token = token;
     await session.save();
 
     // (just here to make development more easy)
-    let origin = process.env.NODE_ENV === "production" ? "https://dashboard.go-data.at" : "http://127.0.0.1:3000";
+    let origin = process.env.NODE_ENV === "production" ? "https://dashboard.go-data.at" : req.nextUrl.origin;
     let href = origin + "/api/email/verify?token=" + rand_bytes;
 
     await sendEmail({  // and send the email.

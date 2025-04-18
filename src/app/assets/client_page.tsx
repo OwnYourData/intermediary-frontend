@@ -4,7 +4,7 @@ import { useState } from "react";
 import Loading from "./loading";
 import ObjectDrawer from "@/components/ObjectDrawer";
 import OpenRight from "../svg/OpenRight";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteAsset, fetchAssets, fetchPods } from "./actions";
 import DropdownTile from "@/components/DropdownTile";
 import { Default } from "@/components/Buttons";
@@ -12,9 +12,9 @@ import PageIndicator from "@/components/PageIndicator";
 import { useRouter, useSearchParams } from "next/navigation";
 import D2AOverlay from "./D2AOverlay";
 
-const queryClient = new QueryClient();
 
 const BUTTON_CLASS = "block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-[100%] text-left";
+
 
 function AssetsRow({
     name,
@@ -31,8 +31,9 @@ function AssetsRow({
     </tr>;
 }
 
-export function AssetsClient() {
+export default function AssetsClient() {
     let rtr = useRouter();
+    let queryClient = useQueryClient();
 
     // figure out which page we're on
     const sp = useSearchParams();
@@ -93,7 +94,12 @@ export function AssetsClient() {
         <h1 className="pb-4 text-2xl font-bold">My Assets</h1>
 
         <D2AOverlay open={!!D2AData} onClose={() => setD2AData("")} schema={D2AData} />
-        <ObjectDrawer soyaState={drawerData} onClose={() => setDrawerData(null)} deleteAction={deleteAsset} drawerType="asset" />
+        <ObjectDrawer
+          soyaState={drawerData}
+          onClose={() => setDrawerData(null)}
+          deleteAction={deleteAsset}
+          drawerType="assets"
+        />
 
         <div className="flex flex-row items-center">
             {/* Pagination */}
@@ -134,8 +140,4 @@ export function AssetsClient() {
             </tbody>
         </table>
     </div>;
-}
-
-export default function ProvideQueryClientToAssetsClient() {
-    return <QueryClientProvider client={queryClient}><AssetsClient /></QueryClientProvider>;
 }

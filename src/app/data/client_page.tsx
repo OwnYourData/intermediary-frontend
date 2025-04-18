@@ -8,10 +8,8 @@ import OpenRight from "../svg/OpenRight";
 import ObjectDrawer from "@/components/ObjectDrawer";
 import D3AOverlay from "./D3AOverlay";
 import { Purple } from "@/components/Buttons";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchEntries } from "./actions";
-
-let queryClient = new QueryClient({});
 
 
 function DataCatalogueRow({
@@ -32,8 +30,9 @@ function DataCatalogueRow({
     </tr>;
 }
 
-export function DataCatalogueClient() {
+export default function DataCatalogueClient() {
     let rtr = useRouter();
+    let queryClient = useQueryClient();
 
     /* figure out which page we're on */
     const sp = useSearchParams();
@@ -48,7 +47,7 @@ export function DataCatalogueClient() {
         data,
         error
     } = useQuery({
-        queryKey: ["catalogue", { "page": page_int }],
+        queryKey: ["data", { "page": page_int }],
         queryFn: async () => { return await fetchEntries(page_int); }
     });
 
@@ -67,7 +66,7 @@ export function DataCatalogueClient() {
             rtr.prefetch(`/data?page=${id}`);
     }
     function redirect(page_id: number) {
-        queryClient.invalidateQueries({ queryKey: ["catalogue", { "page": page_int }] });
+        queryClient.invalidateQueries({ queryKey: ["data", { "page": page_int }] });
         rtr.replace(`/data?page=${page_id}`);
     }
 
@@ -141,11 +140,4 @@ export function DataCatalogueClient() {
             </tbody>
         </table>
     </div>;
-}
-
-// Provide QueryClient to page
-export default function ProvideQueryClientToDataCatalogueClient() {
-    return <QueryClientProvider client={queryClient}>
-        <DataCatalogueClient />
-    </QueryClientProvider>;
 }
