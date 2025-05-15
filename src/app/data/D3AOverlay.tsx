@@ -46,7 +46,7 @@ export default function D3AOverlay({
     
     return <Overlay open={open} onClose={destroy}>
         <h1 className="text-2xl pb-4">Access Data</h1>
-        <SOYAForm setNewData={setData} data={data} schema={object_data["schema"]} />
+        <SOYAForm setNewDataAction={setData as any} data={data} schema={object_data["schema"]} tag={object_data["tag"]} formOnly={true} />
         <div className="pt-4 flex flex-row">
             <button className={Default + " w-[50%]"} onClick={destroy}>Cancel</button>
             <button className={Purple + " w-[50%]"} onClick={submit}>Submit</button>

@@ -14,7 +14,7 @@ export function Drawer({
 }) {
     return <>
         <div
-            className = {`p-4 flex flex-col fixed top-0 right-0 min-h-full overflow-scroll w-fit max-w-[600px] bg-gray-200 dark:bg-gray-800 transform transition-transform duration-300 z-[10000] ${
+            className = {`p-4 flex flex-col fixed top-0 right-0 min-h-full overflow-auto w-fit max-w-[600px] bg-gray-200 dark:bg-gray-800 transform transition-transform duration-300 z-[10000] ${
                 open ? 'translate-x-0' : 'translate-x-full'
             }`}
         >

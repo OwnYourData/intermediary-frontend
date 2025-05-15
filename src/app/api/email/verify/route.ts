@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { sendEmail } from "@/lib/email";
 import { render } from "@react-email/components";
 import VerifyEmail from "@/components/VerifyEmail";
+import { client } from "@/lib/sharedAdminClient";
 
 const urlencode_email = (email: string) => email.replaceAll('@', '_').replaceAll('.', '-');
 const urldecode_email = (email: string) => email.replaceAll('-', '.').replaceAll('_', '@');
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
     session.email_token = undefined;
     await session.save();
 
+    console.log("here 0");
 
     // If user is (not) logged in, or if there is no email token in either the session and the search params
     if(
@@ -29,10 +31,14 @@ export async function GET(req: NextRequest) {
         (session.is_logged_in && session.is_verified)
     ) { return redirect('/'); }  // redirect user home, they are obviously confused
 
+    console.log("here 1");
+
     let [ email_encoded, token ] = session_token.split("::"); // parse up session token
 
     if(spField !== token)   // if email token doesn't match
         { return redirect('/email/form'); }  // redirect back to form
+
+    console.log("here 2");
 
     // from here on we know the email is valid
 
@@ -40,10 +46,11 @@ export async function GET(req: NextRequest) {
 
     let bpk = session.user!!.bPK;  // update user with email 
     try {
-        await prisma.user.update({
-            where: { bPK: bpk },
-            data: { email: email }
+        const res = await client.update_user({
+            "bpk": bpk,
+            "email": email,
         });
+        if(!res) throw Error();
     } catch(e: any)  // if user doesn't exist we made a mistake earlier -> redirect to /api/login
         { return redirect('/api/login'); }
 
@@ -82,7 +89,7 @@ export async function POST(req: NextRequest) {
     let origin = process.env.NODE_ENV === "production" ? "https://dashboard.go-data.at" : req.nextUrl.origin;
     let href = origin + "/api/email/verify?token=" + rand_bytes;
 
-    await sendEmail({  // and send the email.
+    await client.send_email({  // and send the email.
         to: emailField.toString(),
         subject: "Email Verification for intermediary.at",
         html: render(VerifyEmail(session, href))

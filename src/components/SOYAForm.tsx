@@ -1,48 +1,65 @@
 "use client";
 
-import { useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 
-const BASE_URL = "https://soya-form.ownyourdata.eu/?";
+const SOYA_ORIGIN = "https://soya-form.ownyourdata.eu";
 
 
 export default function SOYAForm({
     schema,
+    tag,
+    formOnly = true,
     data = null,
-    setNewDataAction
+    setNewDataAction = (_) => {},
+    onLoadAction = () => {}
 }: {
-    schema: string
+    schema: string,
+    tag?: string,
     data?: any,
-    setNewDataAction: (data: any) => void
+    formOnly?: boolean,
+    setNewDataAction?: (data: any) => void,
+    onLoadAction?: () => void
 }) {
     // we need to access the frame
     let ref = useRef<HTMLIFrameElement>(null);
+    let iframeState = useRef<{
+      data?: any,
+      initialized: boolean
+    }>({data, initialized: false});
 
     let sp = new URLSearchParams();  // prepare url
     sp.set("viewMode", "embedded");
     sp.set("schemaDri", schema);
+    formOnly && sp.set("viewMode", "form-only");
+    tag && sp.set("tag", tag);
 
-    let ranOnce = false;
-    window.addEventListener('message', (e: MessageEvent<any>) => {
-        if(e.source === window)  // we only care about messages from the child
-            { return; }
+    const initializeState = useCallback(() => {
+        console.debug("debug: initializing SOYA Form Data");
+        if(iframeState.current.data)
+            ref.current?.contentWindow?.postMessage({
+                "type": "data",
+                "data": iframeState.current.data
+            }, SOYA_ORIGIN);
+        iframeState.current.initialized = true;
+        onLoadAction();
+    }, [onLoadAction]);
 
-        if(e.data?.type === "update" && !ranOnce) {
-            if(data) {
-                // once a single update arrives we can send it our data
-                // if it matches the scheme it's actually rendered as well
-                ref.current?.contentWindow?.postMessage({
-                    "type": "data",
-                    "data": data
-                }, '*');
-            }
+    useEffect(() => {
+        const handleMessage = (e: MessageEvent<any>) => {
+            if(e.source !== ref.current?.contentWindow) return;
+            
+            const { data } = e;
+            // once an update arrives we can send initialization data if needed
+            // if it matches the scheme it's actually rendered as well
+            if(data?.type === "update" && !iframeState.current.initialized) initializeState();
+            if(data?.type === "data" && iframeState.current.initialized) setNewDataAction(e.data?.evt.data);
 
-            ranOnce = true;  // and remember that we already set it
         };
-
-        // if data updates come tell the parents
-        if(e.data?.type === "data" && ranOnce) setNewDataAction(e.data?.evt.data);
-    });
+        window.addEventListener('message', handleMessage);
+        return () => window.removeEventListener('message', handleMessage);
+    }, [initializeState, setNewDataAction]);
 
     // render frame
-    return <iframe src={BASE_URL + sp.toString()} ref={ref} className="w-full h-full flex-grow rounded-md inset-0 overflow-hidden" />;
+    return <iframe src={`${SOYA_ORIGIN}/?${sp.toString()}`} ref={ref} className="w-full h-full flex-grow rounded-md inset-0 overflow-hidden" />;
+
 }

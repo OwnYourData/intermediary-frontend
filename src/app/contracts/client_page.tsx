@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Loading from "./loading";
-import ObjectDrawer from "@/components/ObjectDrawer";
+import ObjectDrawer, { DrawerState } from "@/components/ObjectDrawer";
 import OpenRight from "../svg/OpenRight";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchContracts, deleteContract } from "./actions";
@@ -36,7 +36,7 @@ export default function ContractsClient() {
     if(Number.isNaN(page_int))
         page_int = 1;
 
-    let [drawerData, setDrawerData] = useState<any>(null);
+    let [drawerState, setDrawerState] = useState<DrawerState>();
     const {
         isPending,
         isError,
@@ -82,8 +82,8 @@ export default function ContractsClient() {
         <h1 className="pb-4 text-2xl font-bold">Contracts</h1>
 
         <ObjectDrawer
-          soyaState={drawerData}
-          onClose={() => setDrawerData(null)}
+          drawerState={drawerState}
+          onClose={() => setDrawerState(undefined)}
           deleteAction={deleteContract}
           drawerType="contracts"
         />
@@ -105,7 +105,11 @@ export default function ContractsClient() {
                 { (data.data as any[])  // hehe intellisense :)
                     .map((el, i) => {
                             let onMoreInfoClick = null;
-                            onMoreInfoClick = () => setDrawerData({id: el["object-id"], name: el.name, schema: el.schema });
+                            onMoreInfoClick = () => setDrawerState({
+                                id: el["object-id"],
+                                name: el.name,
+                                metadata: { "schema": el.schema, "soya-tag": el["soya-tag"] }
+                            });
 
                             return <ContractsRow
                                 key={i}

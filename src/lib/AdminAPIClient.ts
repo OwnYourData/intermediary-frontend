@@ -10,18 +10,15 @@ const node_fetch = fetch;
 
 const TOKEN_PATH = "/oauth/token";
 
-export interface DataCatalogueEntry {
-    host: string;
-    key: string;
-    secret: string;
-    collections: number[];
+export interface ResponseBase {
+  status_code: number;
 }
 
 export interface Object {
-    'object-id': number;
+    'object-id': string;
     name: string;
 };
-export interface ObjectMeta {
+export interface ObjectMeta extends SoyaMetadata {
     "type": string;
     "organization-id": string;
     "delete": boolean;
@@ -29,51 +26,88 @@ export interface ObjectMeta {
     "dri": string; //something?? "ZZZZZZZZm2Rfzzybt5hjiQ2XG2tFB7WtfuMBk>>>>>>>>",  //yes thats edited
     "created-at": string;
     "updated-at": string;
-    "object-id": string;
+    "object-id": number;
 };
-export interface ObjectDetail {
-    'object-id': number;
-    'collection-id': number;
-    name: string;
-};
+export type ObjectWithMeta = Object & ObjectMeta;
+
 export interface Pagination {
     relative_pages: { [key: string]: number };
     total: number;
     curr: number;
 };
 
+export interface SoyaMetadata {
+    schema: string;
+    "soya-tag"?: string;
+}
 export interface Pod {
     id: number;
     name: string;
-    d2a: string;
-    d3a: string;
+    d2a: SoyaMetadata;
+    d3a: SoyaMetadata;
 };
 
+export interface LogObject {
+  id: string,
+  store_id: string,
+  user: string,
+  timestamp: string,
+  event_type: number,
+  event_object: any,
+  event: string,
+  created_at: string,
+  updated_at: string,
+}
+
+export interface User {
+    "bpk": string,
+    "given_name": string,
+    "last_name": string,
+    "postcode": string,
+    "email": string | null,
+    "current_did": {
+        "did": string,
+        "valid_until": string,
+    } | null,
+}
+export interface UpdateUser extends Partial<User> {
+    "bpk": string,
+}
+
+export type EmailPayload = {
+  to: string
+  subject: string
+  html: string
+}
+
 export default class AdminAPIClient {
-    client_id: string = ADMIN_CLIENT;
-    client_secret: string = ADMIN_SECRET;
+    client_id: string;
+    client_secret: string;
 
     base_url: string;
 
     cached_token: CachedToken | undefined;
     refetch_token_task: Promise<void> | undefined;
 
-    constructor() {
-        this.base_url = `https://${ADMIN_HOST}`;
+    constructor(base_url: string, client_id: string, client_secret: string) {
+        this.base_url = base_url;
+        this.client_id = client_id;
+        this.client_secret = client_secret;
         this.get_token().catch(e => { throw e; });
     }
 
-    get _is_token_valid() {
+    static get_default_client() {
+        return new this(`https://${ADMIN_HOST}`, ADMIN_CLIENT, ADMIN_SECRET);
+    }
+
+    _is_token_valid() {
         if(!this.cached_token)
             { return false; }
         
         let expires_at = this.cached_token.expires_at;
         let now = Math.floor(Date.now() / 1000);
 
-        if(expires_at > now) 
-            { return true; }
-        else
-            { return false; }
+        return expires_at > now; 
     }
 
     parse_headers(headers: Headers): Pagination | undefined {
@@ -146,9 +180,8 @@ export default class AdminAPIClient {
 
     trigger_refetch() {  // runs on every request, refreshes on demand
         if(
-            this._is_token_valid || 
-            !!this.refetch_token_task ||
-            this.cached_token
+            this._is_token_valid() || 
+            !!this.refetch_token_task
         ) { return; }
         this.refetch_token_task = this.get_token();
     }
@@ -170,24 +203,22 @@ export default class AdminAPIClient {
 
     // all of the functions below this essentially do the same thing
     async get_data_catalogue(page: number = 1) {
-        let res = await this.fetch(`${this.base_url}/api/data_catalog?page=${page}`);
-        let json: DataCatalogueEntry[] = await res.json()!!;
+        const res = await this.fetch(`${this.base_url}/api/data_catalog?page=${page}`);
+        const headers = res.headers;
+        const pagination = this.parse_headers(headers);
 
-        if(res.status !== 200) 
-            { throw Error(JSON.stringify(json)); }
-
-        let headers = res.headers;
-        let pagination = this.parse_headers(headers);
-
+        let json: Object[] = await res.json()!!;
+        //Object.assign(json, { "status_code": res.status });
         return [json, pagination];
     }
 
     async get_service_catalogue(page: number = 1) {
-        let res = await this.fetch(`${this.base_url}/api/service_catalog?page=${page}`);
-        let headers = res.headers;
-        let pagination = this.parse_headers(headers);
+        const res = await this.fetch(`${this.base_url}/api/service_catalog?page=${page}`);
+        const headers = res.headers;
+        const pagination = this.parse_headers(headers);
 
         let json: Object[] = await res.json();
+        //Object.assign(json, { "status_code": res.status });
         return [json, pagination];
     }
 
@@ -196,11 +227,12 @@ export default class AdminAPIClient {
         sp.set("bpk", bPK);
         sp.set("page", page.toString());
 
-        let res = await this.fetch(`${this.base_url}/api/logs?${sp.toString()}`);
-        let headers = res.headers;
-        let pagination = this.parse_headers(headers);
+        const res = await this.fetch(`${this.base_url}/api/logs?${sp.toString()}`);
+        const headers = res.headers;
+        const pagination = this.parse_headers(headers);
 
-        let json: any[] = await res.json();
+        let json: Object[] = await res.json();
+        //Object.assign(json, { "status_code": res.status });
         return [json, pagination];
     }
 
@@ -208,8 +240,10 @@ export default class AdminAPIClient {
         let sp = new URLSearchParams();
         sp.set("bpk", bPK);
 
-        let res = await this.fetch(`${this.base_url}/api/log/${log_id}?${sp.toString()}`);
-        let json: any = await res.json();
+        const res = await this.fetch(`${this.base_url}/api/log/${log_id}?${sp.toString()}`);
+
+        let json: LogObject = await res.json();
+        Object.assign(json, { "status_code": res.status });
         return json;
     }
 
@@ -218,17 +252,20 @@ export default class AdminAPIClient {
         sp.set("bpk", bPK);
         sp.set("page", page.toString());
 
-        let res = await this.fetch(`${this.base_url}/api/contracts?${sp.toString()}`);
-        let headers = res.headers;
-        let pagination = this.parse_headers(headers);
+        const res = await this.fetch(`${this.base_url}/api/contracts?${sp.toString()}`);
+        const headers = res.headers;
+        const pagination = this.parse_headers(headers);
 
         let json: Object[] = await res.json();
+        //Object.assign(json, { "status_code": res.status });
         return [json, pagination];
     }
 
     async get_pods() {
-        let res = await this.fetch(`${this.base_url}/api/pods`);
+        const res = await this.fetch(`${this.base_url}/api/pods`);
+
         let json: Pod[] = await res.json();
+        //Object.assign(json, { "status_code": res.status });
         return json;
     }
 
@@ -237,42 +274,49 @@ export default class AdminAPIClient {
         sp.set("bpk", bPK);
         sp.set("page", page.toString());
 
-        let res = await this.fetch(`${this.base_url}/api/assets?${sp.toString()}`);
-        let headers = res.headers;
-        let pagination = this.parse_headers(headers);
+        const res = await this.fetch(`${this.base_url}/api/assets?${sp.toString()}`);
+        const headers = res.headers;
+        const pagination = this.parse_headers(headers);
 
         let json: Object[] = await res.json();
+        //Object.assign(json, { "status_code": res.status });
         return [json, pagination];
     }
 
-    async get_object_meta(object_id: number) {
-        let res = await this.fetch(`${this.base_url}/object/${object_id}/meta`);
-        let json: ObjectMeta = await res.json();
+    async get_object_meta(object_id: string) {
+        const res = await this.fetch(`${this.base_url}/object/${object_id}/meta`);
 
-        if(res.status !== 200) 
-            { throw Error(JSON.stringify(json)); }
-
+        let json: ObjectMeta;
+        try {
+            json = await res.json();
+        } catch(e: any) {
+            throw Error(res.status.toString());
+        }
+        Object.assign(json, { "status_code": res.status });
         return json;
     }
     
-    async read_object(object_id: number) {
-        let res = await this.fetch(`${this.base_url}/object/${object_id}/read`);
-        let json: any = await res.json();
+    async read_object(object_id: string) {
+        const res = await this.fetch(`${this.base_url}/object/${object_id}/read`);
 
-        if(res.status !== 200) 
-            { throw Error(JSON.stringify(json)); }
-
+        let json: any;
+        try {
+            json = await res.json();
+        } catch(e: any) {
+            throw Error(res.status.toString());
+        }
+        Object.assign(json, { "status_code": res.status });
         return json;
     }
 
-    async delete_contract(object_id: number, user_id: string) {
-        let body = {
-            "type": "contract",
+    async delete_object(type: string, object_id: string, user_id: string) {
+        const body = {
+            "type": type,
             "id": object_id,
             "user": user_id
         };
 
-        let res = await this.fetch(`${this.base_url}/api/delete`, {
+        const res = await this.fetch(`${this.base_url}/api/delete`, {
             method: "POST",
             body: JSON.stringify(body),
             headers: {
@@ -285,35 +329,14 @@ export default class AdminAPIClient {
         return json;
     }
 
-    async delete_asset(object_id: number, user_id: string) {
-        let body = {
-            "type": "asset",
-            "id": object_id,
-            "user": user_id
-        };
-
-        let res = await this.fetch(`${this.base_url}/api/delete`, {
-            method: "POST",
-            body: JSON.stringify(body),
-            headers: {
-                'content-type': 'application/json'
-            }
-        });
-
-        let json: any = await res.json();
-        Object.assign(json, { "status_code": res.status });
-        return json;
-    }
-
-    async delete_log(object_id: number, log_id: string, user_id: string) {
-        let body = {
-            "type": "log",
+    async delete_log(object_id: string, log_id: string, user_id: string) {
+        const body = {
             "id": object_id,
             "log-id": log_id,
             "user": user_id
         };
 
-        let res = await this.fetch(`${this.base_url}/api/delete`, {
+        const res = await this.fetch(`${this.base_url}/api/log/delete`, {
             method: "POST",
             body: JSON.stringify(body),
             headers: {
@@ -326,14 +349,18 @@ export default class AdminAPIClient {
         return json;
     }
 
-    // TODO below here!!
-    async submit_d2a(form_data: any, user_id: string) {
-        let body = {
-            user_id,
+    async submit_da(form_data: any, schema: string, repo: string, user_id: string, object_id?: string) {
+        const body = {
+            "meta": {
+                schema,
+                repo,
+                "user": user_id,
+                "object-id": object_id
+            },
             "data": form_data
         };
 
-        let res = await this.fetch(`${this.base_url}/api/d2a_submit`, {
+        const res = await this.fetch(`${this.base_url}/api/da_save`, {
             method: "POST",
             body: JSON.stringify(body),
             headers: {
@@ -341,19 +368,23 @@ export default class AdminAPIClient {
             }
         });
 
-        let json: any = await res.json();
+        let json: Object = await res.json();
         Object.assign(json, { "status_code": res.status });
         return json;
     }
 
-    async submit_d3a(form_data: any, object_id: number, user_id: string) {
-        let body = {
-            user_id,
-            object_id,
+    async submit_sa(form_data: any, schema: string, repo: string, object_id: string, user_id: string) {
+        const body = {
+            "meta": {
+                schema,
+                repo,
+                "user": user_id,
+                "object-id": object_id
+            },
             "data": form_data
         };
 
-        let res = await this.fetch(`${this.base_url}/api/d3a_submit`, {
+        const res = await this.fetch(`${this.base_url}/api/sa_save`, {
             method: "POST",
             body: JSON.stringify(body),
             headers: {
@@ -361,28 +392,86 @@ export default class AdminAPIClient {
             }
         });
 
-        let json: any = await res.json();
+        let json: Object = await res.json();
         Object.assign(json, { "status_code": res.status });
         return json;
     }
-    async delete_catalogue_entry(object_id: number, user_id: string) {
-        let body = {
-            "type": "catalog",
-            "id": object_id,
-            "user": user_id
-        };
 
-        let res = await this.fetch(`${this.base_url}/api/delete`, {
-            method: "DELETE",
-            body: JSON.stringify(body),
+    async get_user(user_id: string, withDid: boolean = false): Promise<User | null> {
+        const sp = new URLSearchParams({
+            "bpk": user_id,
+            "withDid": String(withDid)
+        });
+        const res = await this.fetch(`${this.base_url}/api/user?${sp.toString()}`);
+        if(res.status !== 200) return null;
+
+        const u: User = await res.json();
+        return u;
+    }
+
+    async create_user(user: User): Promise<boolean> {
+        const res = await this.fetch(`${this.base_url}/api/user`, {
+            body: JSON.stringify(user),
+            method: "POST",
             headers: {
                 'content-type': 'application/json'
             }
         });
 
-        let json: any = await res.json();
-        Object.assign(json, { "status_code": res.status });
-        return json;
+        return res.status === 200;
     }
 
+    async update_user(user: UpdateUser): Promise<boolean> {
+        const res = await this.fetch(`${this.base_url}/api/user`, {
+            body: JSON.stringify(user),
+            method: "PUT",
+            headers: {
+                'content-type': 'application/json'
+            }
+        });
+
+        if(res.status === 500) return false;
+        if(res.status === 404) throw Error("user not found!");
+
+        return res.status === 200;
+    }
+
+    async delete_user(user_id: string): Promise<boolean> {
+        const sp = new URLSearchParams({ "bpk": user_id });
+
+        const res = await this.fetch(`${this.base_url}/api/user?${sp.toString()}`, {
+            "method": "DELETE"
+        });
+
+        if(res.status === 404) throw Error("user not found");
+
+        return res.status === 200;
+    }
+    
+    async use_backend_datastore(data: string) {
+        const res = await this.fetch(`${this.base_url}/api/store_data`, {
+            method: "POST",
+            body: data,
+            headers: {
+                'content-type': 'text/plain;charset=UTF-8',
+                'accept': 'application/json'
+            }
+        });
+        
+        const json: { token: string } = await res.json();
+        return json.token;
+    }
+
+    async send_email(payload: EmailPayload) {
+        const res = await this.fetch(`${this.base_url}/api/email`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+            headers: {
+                'content-type': 'text/plain;charset=UTF-8',
+                'accept': 'application/json'
+            }
+        });
+
+        return res.status === 200;
+    }
 }

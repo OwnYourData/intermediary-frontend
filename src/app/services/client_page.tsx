@@ -7,7 +7,7 @@ import Loading from "./loading";
 import OpenRight from "../svg/OpenRight";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchEntries } from "./actions";
-import ObjectDrawer from "@/components/ObjectDrawer";
+import ObjectDrawer, { DrawerState } from "@/components/ObjectDrawer";
 
 
 function ServicesRow({
@@ -46,7 +46,7 @@ export default function ServicesClient() {
         queryFn: async () => { return await fetchEntries(page_int); }
     });
 
-    let [soyaData, setSoyaData] = useState<any>(null);  // contains object id, name and schema if drawer is shown
+    let [drawerState, setDrawerState] = useState<DrawerState>();  // contains object id, name and schema if drawer is shown
 
     if(isPending)  // if there's a pending query we can show Loading
         { return <Loading />; }
@@ -77,11 +77,15 @@ export default function ServicesClient() {
         />;
     }
 
-    return <div className={!!soyaData ? "overflow-hidden" : "overflow-auto"}>
+    return <div className={!!drawerState ? "overflow-hidden" : "overflow-auto"}>
         <h1 className="pb-4 text-2xl font-bold">Service Catalogue</h1>
         
         {/* meta objects, only shown once needed */}
-        <ObjectDrawer soyaState={soyaData} onClose={() => setSoyaData(null)} drawerType="services" />
+        <ObjectDrawer
+            drawerState={drawerState}
+            onClose={() => setDrawerState(undefined)}
+            drawerType="services"
+        />
 
         <div className="flex flex-row items-center">
             {/* Pagination */}
@@ -99,14 +103,14 @@ export default function ServicesClient() {
             <tbody>
                 { (data.data as any[])  // hehe intellisense :)
                     .map((el, i) => {
+                        console.log(el);
                         let onMoreInfoClick = null;
 
                         if(Object.keys(el).includes("object-id")) {
-                            onMoreInfoClick = () => setSoyaData({
+                            onMoreInfoClick = () => setDrawerState({
                                 id: el["object-id"],
                                 name: el.name,
-                                schema: el.schema,
-                                type: "service"
+                                metadata: { "schema": el.schema, "soya-tag": el["soya-tag"] }
                             });  
                         }
 

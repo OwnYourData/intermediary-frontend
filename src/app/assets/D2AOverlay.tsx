@@ -5,33 +5,39 @@ import Overlay from "@/components/Overlay";
 import SOYAForm from "@/components/SOYAForm";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { saveD2A } from "./actions"; 
+import { generateSignD2ARedirect, saveD2A } from "./actions"; 
+import { SoyaMetadata } from "@/lib/AdminAPIClient";
+import { redirect } from "next/navigation";
 
 export default function D2AOverlay({
-    schema,
+    metadata,
     onClose,
     open
 }: {
-    schema: string
+    metadata: SoyaMetadata | undefined,
     onClose: any
-    open: boolean
+    open: boolean,
 }) {
     const queryClient = useQueryClient();
     
     let [data, setData] = useState({});
 
-    const mutation = useMutation({
-        mutationFn: saveD2A,
-        onSuccess: (data: any) => {
-            queryClient.invalidateQueries({ queryKey: ["eeg_objects"] });
-            alert(data["res"]["message"]);
-        },
-    });
-
     function destroy() {
         setData({});
         onClose();
     }
+
+    const saveMutation = useMutation({
+        mutationFn: async (data: any) => {
+            console.log("saving:", data);
+            return await saveD2A(data, metadata!!.schema);
+        },
+        onSuccess: (_: any) => {
+            queryClient.invalidateQueries({ queryKey: ["assets"] });
+            alert("Success!");
+            destroy();
+        },
+    });
 
     function submit() {
         if(Object.keys(data).length === 0) {
@@ -39,8 +45,18 @@ export default function D2AOverlay({
             return;
         }
 
-        mutation.mutate(data);
-        destroy();
+        saveMutation.mutate(data);
+    }
+
+    async function sign() {
+        if(Object.keys(data).length === 0) {
+            alert("please actually fill something in");
+            return;
+        }
+
+        let url = await generateSignD2ARedirect(data, metadata!!.schema);
+        queryClient.invalidateQueries({ queryKey: ["assets"] });
+        redirect(url);
     }
     
     return <Overlay open={open} onClose={onClose}>
@@ -48,11 +64,13 @@ export default function D2AOverlay({
         <SOYAForm
           setNewDataAction={setData}
           data={data}
-          schema={schema}
+          schema={metadata ? metadata.schema : ""}
+          tag={metadata?.["soya-tag"]}
         />
-        <div className="pt-4 flex flex-row">
+        <div className="pt-4 flex flex-row justify-between">
             <button className={Default + " w-[50%]"} onClick={destroy}>Cancel</button>
-            <button className={Purple + " w-[50%]"} onClick={submit}>Submit</button>
+            <button className={Purple + " w-[50%] mr-2"} onClick={submit}>Save</button>
+            <button className={Purple + " w-[50%]"} onClick={sign}>Sign</button>
         </div>
     </Overlay>;
 }

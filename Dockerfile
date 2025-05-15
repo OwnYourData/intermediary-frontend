@@ -41,7 +41,8 @@ COPY . .
 # set envs for Production
 ENV NODE_ENV production
 ENV NEXT_TELEMETRY_DISABLED 1
-RUN cp .env.dummy .env
+RUN rm -rf .env
+RUN mv .env.build .env
 
 # generate Prisma client
 RUN pnpm exec prisma generate
@@ -71,6 +72,7 @@ COPY --from=deps /app/node_modules ./node_modules/
 COPY --from=build /app/.next ./.next/
 COPY --from=build /app/.next/standalone/. .
 COPY --from=build /app/public ./public/
+COPY .env.dummy .env
 
 # Expose port
 EXPOSE 3000
@@ -80,4 +82,4 @@ ENV PORT 3000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "wget", "-q0", "http://localhost:3000/health" ]
 
 # run deployment macro
-CMD ["pnpm", "deployment"]
+CMD ["node", "server.js"]

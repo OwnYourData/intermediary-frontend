@@ -10,7 +10,7 @@ export default async function TopBar() {
     if(session.is_logged_in && session.is_verified)    
         user_element = <UserTile sessionData={session.user} />;
 
-    return <div className="flex flex-row justify-between pt-4 pb-4 px-6 text-white bg-[#202537] items-center">
+    return <div className="flex flex-row justify-between pt-4 pb-4 px-6 text-white bg-[#202537] items-center h-20">
         <div className="float-left">
             <h1 className="font-bold text-xl"><Link href="/">Data Intermediary</Link></h1>
         </div>

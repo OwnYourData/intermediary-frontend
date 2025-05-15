@@ -24,22 +24,22 @@ export function SidebarItem({
 
     return <div className="flex flex-col pb-4">
         <div className="flex flex-row justify-between items-center">
-            <Link href={topPath}>
+            <Link className="hover:transition-colors duration-50 hover:text-blue-300" href={topPath}>
                 <div className="float-left">
                     <p>{pageMeta.name}</p>
                 </div>
             </Link>
             <div className="float-right">
-                { !hasSubPages ? <></> : 
+                { hasSubPages && 
                     <button onClick={() => setOpen(!isOpen)}>{ pageMeta.subpages ? <OpenUp /> : <></> }</button>
                 }
             </div>
         </div>
-        { !hasSubPages ? <></> : 
+        { hasSubPages && 
             <div className={"pl-4 " + hidden}>
                 {
                     pageMeta.subpages!!.map((subPage, idx) =>
-                        <div key={idx} className="pt-4">
+                        <div key={idx} className="pt-4 hover:transition-colors duration-50 hover:text-blue-300">
                             <a href={topPath + subPage.path}>{subPage.name}</a>
                             <br />
                         </div>

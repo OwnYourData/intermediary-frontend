@@ -1,16 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Loading from "./loading";
-import ObjectDrawer from "@/components/ObjectDrawer";
+import ObjectDrawer, { DrawerState } from "@/components/ObjectDrawer";
 import OpenRight from "../svg/OpenRight";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { deleteAsset, fetchAssets, fetchPods } from "./actions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { deleteAsset, fetchAssets, fetchPods, saveD2A } from "./actions";
 import DropdownTile from "@/components/DropdownTile";
 import { Default } from "@/components/Buttons";
 import PageIndicator from "@/components/PageIndicator";
 import { useRouter, useSearchParams } from "next/navigation";
 import D2AOverlay from "./D2AOverlay";
+import { ObjectWithMeta, SoyaMetadata } from "@/lib/AdminAPIClient";
+import AssetsDrawer from "./AssetsDrawer";
 
 
 const BUTTON_CLASS = "block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white w-[100%] text-left";
@@ -42,8 +44,8 @@ export default function AssetsClient() {
     if(Number.isNaN(page_int))
         page_int = 1;
 
-    let [drawerData, setDrawerData] = useState<any>(null);
-    let [D2AData, setD2AData] = useState<string>("");    // contains a schema if we should overlay
+    let [drawerState, setDrawerState] = useState<DrawerState>();
+    let [D2AData, setD2AData] = useState<SoyaMetadata>();    // contains a schema if we should overlay
 
     const podsQueryResponse = useQuery({
         queryKey: ["pods"],
@@ -66,6 +68,7 @@ export default function AssetsClient() {
         { return <span>Error: {podsQueryResponse.error?.message}</span>; }
     if(isError)
         { return <span>Error: {error?.message}</span>; }
+
 
     // util functions for the Page Indicator
     function pagination_prefetch(page_ids: number[]) {
@@ -90,16 +93,12 @@ export default function AssetsClient() {
         />;
     }
 
+
     return <div>
         <h1 className="pb-4 text-2xl font-bold">My Assets</h1>
 
-        <D2AOverlay open={!!D2AData} onClose={() => setD2AData("")} schema={D2AData} />
-        <ObjectDrawer
-          soyaState={drawerData}
-          onClose={() => setDrawerData(null)}
-          deleteAction={deleteAsset}
-          drawerType="assets"
-        />
+        <D2AOverlay open={!!D2AData} onClose={() => setD2AData(undefined)} metadata={D2AData} />
+        <AssetsDrawer drawerState={drawerState} onClose={() => setDrawerState(undefined)} />
 
         <div className="flex flex-row items-center">
             {/* Pagination */}
@@ -123,11 +122,15 @@ export default function AssetsClient() {
                 </tr>
             </thead>
             <tbody>
-                { (data.data as any[])  // hehe intellisense :)
+                { (data.data as ObjectWithMeta[])  // hehe intellisense :)
                     .map((el, i) => {
                             let onMoreInfoClick = null;
                             if(Object.keys(el).includes("object-id"))
-                                onMoreInfoClick = () => setDrawerData({id: el["object-id"], name: el.name, schema: el.schema});
+                                onMoreInfoClick = () => setDrawerState({
+                                    id: el["object-id"],
+                                    name: el.name,
+                                    metadata: { "schema": el.schema, "soya-tag": el["soya-tag"] }
+                                });
 
                             return <AssetsRow
                                 key={i}

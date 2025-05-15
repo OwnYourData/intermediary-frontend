@@ -1,27 +1,45 @@
 "use server";
 
-import { DataCatalogueEntry, Pagination } from "@/lib/AdminAPIClient";
-import PodAPIClient, { CollectionDetail, podmeta_from_string } from "@/lib/PodAPIClient";
+import { Object as APIObject, ObjectWithMeta, Pagination, ResponseBase, SoyaMetadata } from "@/lib/AdminAPIClient";
+import { DA_SIGN } from "@/lib/config";
 import { getSession } from "@/lib/session";
 import { client } from "@/lib/sharedAdminClient";
 
-export async function fetchEntries(page: number) {
+export interface FetchEntriesReturnType extends Object, Partial<ObjectWithMeta> {
+    d2a?: SoyaMetadata;
+    d3a?: SoyaMetadata;
+}
+
+export async function fetchEntries(page: number): Promise<{
+    data: FetchEntriesReturnType[],
+    pagination: Pagination
+}> {
     let session = await getSession();
     if(!session.is_verified || !session.user)
         throw Error("no-auth");
 
-    const r = await client.get_data_catalogue(page);
+    let r_query = client.get_data_catalogue(page);
+    let pods_query = client.get_pods();
+    let data: FetchEntriesReturnType[] = [];
+
+    let r = await r_query;
+    let pods = await pods_query;
     
-    let data: CollectionDetail[] = [];
+    for(let obj of r[0] as APIObject[]) {
+        if(!obj["object-id"]) continue;
+        
+        let newObject: any = { ...obj };
+        try {
+            let meta = await client.get_object_meta(obj["object-id"]);
+            newObject = { ...obj, ...meta };
 
-    for(const pod of r[0] as DataCatalogueEntry[]) {
-        const meta = podmeta_from_string(pod.host);
-        const podClient = new PodAPIClient(pod.key, pod.secret, meta);
+            newObject.d2a = (newObject.schema && newObject["tag"]) &&
+                { "schema": newObject.schema, "_soya-tag": newObject["tag"] };
+            let matching = pods.filter(el => el.d2a.schema === newObject.d2a.schema);
+            if(matching.length === 1) newObject.d3a = matching[0].d3a;
+        } catch(e: any) {}
 
-        for(const collection of pod.collections) {
-            const info = await podClient.get_collection(collection);
-            data.push(info);
-        }
+        data.push(newObject as FetchEntriesReturnType); 
     }
 
     return {
@@ -30,14 +48,18 @@ export async function fetchEntries(page: number) {
     };
 }
 
-export async function deleteEntry(object_id: number) {
+export async function deleteEntry(object_id: string) {
     let session = await getSession();
     if(!session.is_verified || !session.user)
         throw Error("no-auth");
 
+    let r = await client.delete_object("data", object_id, session.user.bPK);
+    if(r["status_code"] != 200)
+        throw Error("Deletion Failed");
+    return r;
 }
 
-export async function getD3AforD2A(d2a: string) {
+export async function getD3AforD2A(d2a: SoyaMetadata) {
     let session = await getSession();
     if(!session.is_verified || !session.user)
         throw Error("no-auth");
@@ -51,8 +73,30 @@ export async function getD3AforD2A(d2a: string) {
     return null;
 }
 
-export async function saveD3A(data: any, object_id?: number) {
+export async function saveD3A(data: any, schema: string, object_id?: string) {
     let session = await getSession();
     if(!session.is_verified || !session.user)
         throw Error("no-auth");
+
+    let r = await client.submit_da(data, schema, "data", session.user.bPK, object_id);
+    if((r as any as ResponseBase)["status_code"] != 200)
+        throw Error("Saving failed!");
+    return r;
+}
+
+export async function generateSignD3ARedirect(data: any, schema: string, object_id?: string) {
+    let session = await getSession();
+    if(!session.is_verified || !session.user)
+        throw Error("no-auth");
+
+    let obj = await saveD3A(data, schema, object_id);
+    object_id = obj["object-id"];
+    
+    let body = {
+        "id": object_id,
+        "bpk": session.user.bPK 
+    };
+    //const token = await client.use_backend_datastore(JSON.stringify(body));
+    //return `${DA_SIGN}?token=${token}`;
+    return `${DA_SIGN}?${(new URLSearchParams(body as Record<string, any>)).toString()}`;
 }

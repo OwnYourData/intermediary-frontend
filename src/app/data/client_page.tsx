@@ -5,11 +5,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState } from "react";
 import Loading from "./loading";
 import OpenRight from "../svg/OpenRight";
-import ObjectDrawer from "@/components/ObjectDrawer";
+import ObjectDrawer, { DrawerState } from "@/components/ObjectDrawer";
 import D3AOverlay from "./D3AOverlay";
 import { Purple } from "@/components/Buttons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchEntries } from "./actions";
+import { deleteEntry, fetchEntries } from "./actions";
 
 
 function DataCatalogueRow({
@@ -48,11 +48,11 @@ export default function DataCatalogueClient() {
         error
     } = useQuery({
         queryKey: ["data", { "page": page_int }],
-        queryFn: async () => { return await fetchEntries(page_int); }
+        queryFn: async () => { console.log("refetching"); return await fetchEntries(page_int); }
     });
 
-    let [soyaData, setSoyaData] = useState<any>(null);  // contains object id, name and schema if drawer is shown
-    let [D3AData, setD3AData] = useState<any>(null);    // contains an object id and schema if we should show
+    let [drawerState, setDrawerState] = useState<DrawerState>();  // contains object id, name and soyaData if drawer is shown
+    let [D3AData, setD3AData] = useState<any>(null);    // contains an object id and soyaData if we should show
 
     if(isPending)  // if there's a pending query we can show Loading
         { return <Loading />; }
@@ -83,14 +83,15 @@ export default function DataCatalogueClient() {
         />;
     }
 
-    return <div className={!!soyaData ? "overflow-hidden" : "overflow-auto"}>
+    return <div className={!!drawerState ? "overflow-hidden" : "overflow-auto"}>
         <h1 className="pb-4 text-2xl font-bold">Data Catalogue</h1>
         
         {/* meta objects, only shown once needed */}
         <D3AOverlay open={!!D3AData} onClose={() => setD3AData(null)} object_data={D3AData} />
         <ObjectDrawer
-          soyaState={soyaData}
-          onClose={() => setSoyaData(null)}
+          drawerState={drawerState}
+          onClose={() => setDrawerState(undefined)}
+          deleteAction={deleteEntry}
           drawerType="data"
         />
 
@@ -108,32 +109,32 @@ export default function DataCatalogueClient() {
                 </tr>
             </thead>
             <tbody>
-                { (data.data as any[])  // hehe intellisense :)
-                    .map((el, i) => {
+                { data.data  // hehe intellisense :)
+                    .map(async (el, i) => {
                         console.log(el);
                         let onAccessClick = null;
                         let onMoreInfoClick = null;
 
-                        if(Object.keys(el).includes("object-id") && false) {
-                            // filter d2a == current_schema, so we can
-                            // get the correct d3a for the "Access" button
+                        if(el.d3a) {
                             onAccessClick = () => setD3AData({
                                 "object_id": el["object-id"],
-                                "schema": "D3Aeeg"
+                                "schema": el.d3a
                             });
-                            onMoreInfoClick = () => setSoyaData({
-                                id: el["object-id"],
+                        }
+                        if(el.d2a) {
+                            onMoreInfoClick = () => setDrawerState({
+                                id: el["object-id"]!!,
                                 name: el.name,
-                                schema: el.schema,
-                                type: "object"
+                                metadata: el.d2a
                             });
+
                         }
 
                         return <DataCatalogueRow
                             key={i}
                             onAccessClick={onAccessClick}
                             onMoreInfoClick={onMoreInfoClick}
-                            name={el.name}
+                            name={el.name!!}
                         />;
                     })
                 }

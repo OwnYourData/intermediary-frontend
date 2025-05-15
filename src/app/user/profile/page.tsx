@@ -1,7 +1,7 @@
 import { Default } from "@/components/Buttons";
 import FormattedDate from "@/components/FormattedDate";
-import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { client } from "@/lib/sharedAdminClient";
 import { redirect } from "next/navigation";
 
 export default async function UserProfile() {
@@ -10,11 +10,15 @@ export default async function UserProfile() {
 
         let session = await getSession();
         session.is_verified = false;
-        await prisma.user.update({
-            where: { bPK: session.user!!.bPK },
-            data: {
-                email: null
-            }
+        //await prisma.user.update({
+        //    where: { bPK: session.user!!.bPK },
+        //    data: {
+        //        email: null
+        //    }
+        //});
+        await client.update_user({
+            bpk: session.user!!.bPK,
+            email: null
         });
 
         await session.save();
@@ -32,10 +36,11 @@ export default async function UserProfile() {
     if(!(session.is_logged_in && session.is_verified))
         { return redirect("/api/login?next=/user/profile"); }
     
-    let user = await prisma.user.findUnique({
-        where: { bPK: session.user!!.bPK },
-        include: { current_did: true }
-    });
+    //let user = await prisma.user.findUnique({
+    //    where: { bPK: session.user!!.bPK },
+    //    include: { current_did: true }
+    //});
+    let user = await client.get_user(session.user!!.bPK, true);
 
     if(!user)
         { return redirect("/api/login?next=/user/profile"); }
@@ -65,13 +70,13 @@ export default async function UserProfile() {
             placeholder="if you see this shout really loudly"
             name="bPK"
             type="bPK"
-            value={user.bPK}
+            value={user.bpk}
         />
 
         <label className="block pt-2 text-black dark:text-white text-xl font-extrabold mb-1" htmlFor="wallet">Wallet</label>
         <div id="wallet">
             { !!user.current_did && <>
-                <p>Link valid until <FormattedDate date={user.current_did.valid_until} /></p>
+                <p>Link valid until <FormattedDate date={new Date(Date.parse(user.current_did.valid_until))} /></p>
                 <label className="block text-black dark:text-white text-sm font-extrabold mb-1" htmlFor="did">Decentralised Identity (DID)</label>
                 <input
                     className="shadow appearance-none border rounded w-1/3 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline disabled:bg-gray-100 mb-2 mr-4"

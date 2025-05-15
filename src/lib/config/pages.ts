@@ -1,3 +1,5 @@
+export type PageType = "contracts" | "assets" | "logs" | "data" | "services";
+
 export interface PageMeta {
     icon?: JSX.Element;
     name: string;
@@ -11,6 +13,10 @@ export interface SubPageMeta {
 
 const pages: PageMeta[] = [
     {
+        name: "My Assets",
+        path: "/assets",
+    },
+    {
         name: "Data Catalogue",
         path: "/data",
     },
@@ -21,10 +27,6 @@ const pages: PageMeta[] = [
     {
         name: "My Contracts",
         path: "/contracts",
-    },
-    {
-        name: "My Assets",
-        path: "/assets",
     },
     {
         name: "Logs",

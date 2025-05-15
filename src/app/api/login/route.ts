@@ -1,7 +1,7 @@
-import { prisma } from "@/lib/db";
 import { getSession, logout } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
+import { client } from "@/lib/sharedAdminClient";
 import * as config from "@/lib/config";
 
 // when in doubt, just redirect the user to `/api/login` and they will be forced to login if they aren't
@@ -42,20 +42,36 @@ export async function GET(req: NextRequest) {
     // did you go through id austra and don't have a verified email?
     // (this usualy means user just got redirected back from /api/idaustria/callback)
     if(session.is_logged_in && !session.is_verified) {  
-        let user = await prisma.user.findUnique({  // let's check if you're in the database
-            where: { bPK: session.user!!.bPK }
-        });
+        //let user = await prisma.user.findUnique({  // let's check if you're in the database
+        //    where: { bPK: session.user!!.bPK }
+        //});
+
+        let user = await client.get_user(session.user!!.bPK);
 
         // no? then let's create you
+        if(!user) {
+            //user = await prisma.user.create({
+            //    data: {
+            //        bPK: session.user!!.bPK,
+            //        given_name: session.user!!.given_name,
+            //        last_name: session.user!!.last_name,
+            //        postcode: session.user!!.postcode,
+            //    }
+            //});
+            let userData = {
+                bpk: session.user!!.bPK,
+                given_name: session.user!!.given_name,
+                last_name: session.user!!.last_name,
+                postcode: session.user!!.postcode,
+                email: null,
+                current_did: null
+            };
+            if(!(await client.create_user(userData)))
+                return new NextResponse("user could not be created");
+        }
+
         if(!user)
-            user = await prisma.user.create({
-                data: {
-                    bPK: session.user!!.bPK,
-                    given_name: session.user!!.given_name,
-                    last_name: session.user!!.last_name,
-                    postcode: session.user!!.postcode,
-                }
-            });
+            throw Error("error creation failed in the backend");
 
         // do you have an email saved?
         if(user.email) {
@@ -70,22 +86,22 @@ export async function GET(req: NextRequest) {
         session.next_url = undefined;
         await session.save();
 
-        let user = await prisma.user.findUnique({
-            where: { bPK: session.user!!.bPK },
-            include: { current_did: true }
-        });
+        //let user = await prisma.user.findUnique({
+        //    where: { bPK: session.user!!.bPK },
+        //    include: { current_did: true }
+        //});
+        let user = await client.get_user(session.user!!.bPK, true);
 
         // expire DID if its become invalid
         if(user!!.current_did) {
             let now = Date.now();
-            let expire = user!!.current_did.valid_until.getTime();
+            let expire = Date.parse(user!!.current_did.valid_until);
             if(expire - now < 0)
-                await prisma.walletDID.delete({ where: { did: user!!.current_did.did } });
+                await client.update_user({ "bpk": session.user!!.bPK, current_did: null });
         }
 
         return redirect(nextUrl);
     }  // then goodbye, you have no business here anymore
-
 
     // if an user somehow manages to end up here, someone fucked something very up
     // -> `session.is_logged_in` is `false`, but `session.is_verified` is `true`

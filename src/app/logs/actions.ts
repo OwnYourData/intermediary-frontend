@@ -1,6 +1,6 @@
 "use server";
 
-import { Pagination } from "@/lib/AdminAPIClient";
+import { Pagination, ResponseBase } from "@/lib/AdminAPIClient";
 import { getSession } from "@/lib/session";
 import { client } from "@/lib/sharedAdminClient";
 
@@ -22,10 +22,13 @@ export async function fetchLog(log_id: string) {
         throw Error("no-auth");
 
     let r = await client.get_log(log_id, session.user.bPK);
+    if((r as any as ResponseBase)["status_code"] != 200)
+        throw Error("Fetching Failed");
+    delete (r as any as Partial<ResponseBase>)["status_code"];
     return r;
 }
 
-export async function deleteLog(object_id: number, log_id: string) {
+export async function deleteLog(object_id: string, log_id: string) {
     let session = await getSession();
     if(!session.is_verified || !session.user)
         throw Error("no-auth");

@@ -1,9 +1,9 @@
-import { prisma } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import * as config from "@/lib/config";
 import { redirect } from "next/navigation";
 import { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
+import { client } from "@/lib/sharedAdminClient";
 
 interface TokenData {
   "state": string;
@@ -61,20 +61,28 @@ export async function GET(req: NextRequest) {
     let valid_until = new Date(json["valid-until"]!!);
 
     // delete old DID if exists
-    await prisma.walletDID.deleteMany({
-        where: {
-            bPK: session.user!!.bPK
-        }
-    });
+    //await prisma.walletDID.deleteMany({
+    //    where: {
+    //        bPK: session.user!!.bPK
+    //    }
+    //});
 
     // create WalletDID in DB
-    await prisma.walletDID.create({
-        data: {
-            did: did,
-            valid_until: valid_until,
-            user: {
-                connect: { bPK: session.user!!.bPK }
-            }
+    //await prisma.walletDID.create({
+    //    data: {
+    //        did: did,
+    //        valid_until: valid_until,
+    //        user: {
+    //            connect: { bPK: session.user!!.bPK }
+    //        }
+    //    }
+    //});
+  
+    await client.update_user({
+        "bpk": session.user!!.bPK,
+        "current_did": {
+            did,
+            valid_until: valid_until.toISOString()
         }
     });
 

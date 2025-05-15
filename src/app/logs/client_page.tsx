@@ -5,7 +5,7 @@ import Loading from "./loading";
 import OpenRight from "../svg/OpenRight";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteLog, fetchLog, fetchLogs } from "./actions";
-import ObjectDrawer from "@/components/ObjectDrawer";
+import ObjectDrawer, { DrawerState } from "@/components/ObjectDrawer";
 import { useSearchParams, useRouter } from "next/navigation";
 import PageIndicator from "@/components/PageIndicator";
 
@@ -36,7 +36,7 @@ export default function LogsClient() {
     if(Number.isNaN(page_int))
         page_int = 1;
 
-    let [drawerData, setDrawerData] = useState<any>(null);
+    let [drawerState, setDrawerState] = useState<DrawerState>();
     const {
         isPending,
         isError,
@@ -80,8 +80,8 @@ export default function LogsClient() {
         <h1 className="pb-4 text-2xl font-bold">Logs</h1>
 
         <ObjectDrawer
-          soyaState={drawerData}
-          onClose={() => setDrawerData(null)}
+          drawerState={drawerState}
+          onClose={() => setDrawerState(undefined)}
           fetchAction={fetchLog}
           deleteAction={deleteLog}
           drawerType="logs"
@@ -105,7 +105,12 @@ export default function LogsClient() {
                     .map((el, i) => {
                             let onMoreInfoClick = null;
                             if(Object.keys(el).includes("object-id") && el["display"] !== false)
-                                onMoreInfoClick = () => setDrawerData({id: el["object-id"], log_id: el["log-id"], name: el.name, schema: el.schema});
+                                onMoreInfoClick = () => setDrawerState({
+                                    id: el["object-id"],
+                                    log_id: el["log-id"],
+                                    name: el.name,
+                                    metadata: { "schema": el.schema, "soya-tag": el["soya-tag"] }
+                                });
 
                             return <LogsRow
                                 key={i}
