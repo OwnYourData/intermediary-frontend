@@ -1,4 +1,5 @@
 import { ADMIN_CLIENT, ADMIN_HOST, ADMIN_SECRET } from "./config";
+import { UserData } from "./config/session-config";
 
 export interface CachedToken {
     token: string;
@@ -27,6 +28,7 @@ export interface ObjectMeta extends SoyaMetadata {
     "created-at": string;
     "updated-at": string;
     "object-id": number;
+    "button"?: SoyaMetadata;
 };
 export type ObjectWithMeta = Object & ObjectMeta;
 
@@ -38,7 +40,7 @@ export interface Pagination {
 
 export interface SoyaMetadata {
     schema: string;
-    "soya-tag"?: string;
+    tag?: string;
 }
 export interface Pod {
     id: number;
@@ -59,20 +61,14 @@ export interface LogObject {
   updated_at: string,
 }
 
-export interface User {
-    "bpk": string,
-    "given_name": string,
-    "last_name": string,
-    "postcode": string,
+export interface User extends UserData {
     "email": string | null,
     "current_did": {
-        "did": string,
-        "valid_until": string,
+        "did": string | null,
+        "valid_until": string | null,
     } | null,
 }
-export interface UpdateUser extends Partial<User> {
-    "bpk": string,
-}
+export interface UpdateUser extends Partial<User> {};
 
 export type EmailPayload = {
   to: string
@@ -373,7 +369,7 @@ export default class AdminAPIClient {
         return json;
     }
 
-    async submit_sa(form_data: any, schema: string, repo: string, object_id: string, user_id: string) {
+    async submit_sa(form_data: any, schema: string, repo: string, user_id: string, object_id?: string) {
         const body = {
             "meta": {
                 schema,
@@ -399,7 +395,7 @@ export default class AdminAPIClient {
 
     async get_user(user_id: string, withDid: boolean = false): Promise<User | null> {
         const sp = new URLSearchParams({
-            "bpk": user_id,
+            "bPK": user_id,
             "withDid": String(withDid)
         });
         const res = await this.fetch(`${this.base_url}/api/user?${sp.toString()}`);
@@ -463,12 +459,11 @@ export default class AdminAPIClient {
     }
 
     async send_email(payload: EmailPayload) {
-        const res = await this.fetch(`${this.base_url}/api/email`, {
+        const res = await this.fetch(`${this.base_url}/api/mail`, {
             method: "POST",
             body: JSON.stringify(payload),
             headers: {
-                'content-type': 'text/plain;charset=UTF-8',
-                'accept': 'application/json'
+                'content-type': 'application/json',
             }
         });
 

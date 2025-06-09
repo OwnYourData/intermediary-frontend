@@ -1,7 +1,9 @@
+import { ReactElement } from "react";
+
 export type PageType = "contracts" | "assets" | "logs" | "data" | "services";
 
 export interface PageMeta {
-    icon?: JSX.Element;
+    icon?: ReactElement;
     name: string;
     path: string;
     subpages?: SubPageMeta[];
