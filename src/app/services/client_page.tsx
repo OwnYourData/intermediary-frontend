@@ -8,18 +8,23 @@ import OpenRight from "../svg/OpenRight";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchEntries } from "./actions";
 import ObjectDrawer, { DrawerState } from "@/components/ObjectDrawer";
+import { Purple } from "@/components/Buttons";
+import SEAOverlay, { OverlayState } from "./SEAOverlay";
 
 
 function ServicesRow({
     name,
+    onUseClick,
     onMoreInfoClick,
 }: {
     name: string,
+    onUseClick?: any,
     onMoreInfoClick?: any
 }) {
     return <tr className="space-x-4 pb-2 border-gray-600 border-b-2 my-10 align-middle">
         <td className="pr-6 py-2 whitespace-nowrap">{ name }</td>
         <td className="pr-1 py-2 whitespace-normal align-middle text-right flex flex-row">
+            { onUseClick && <button onClick={onUseClick} className={Purple + " text-center mr-4"}>Access</button> }
             { onMoreInfoClick && <button onClick={onMoreInfoClick}><OpenRight /></button> }
         </td>
     </tr>;
@@ -47,6 +52,7 @@ export default function ServicesClient() {
     });
 
     let [drawerState, setDrawerState] = useState<DrawerState>();  // contains object id, name and schema if drawer is shown
+    let [SEAData, setSEAData] = useState<OverlayState | undefined>(undefined);    // contains an object id and soyaData if we should show
 
     if(isPending)  // if there's a pending query we can show Loading
         { return <Loading />; }
@@ -86,6 +92,7 @@ export default function ServicesClient() {
             onClose={() => setDrawerState(undefined)}
             drawerType="services"
         />
+        <SEAOverlay onClose={() => setSEAData(undefined)} state={SEAData} />
 
         <div className="flex flex-row items-center">
             {/* Pagination */}
@@ -105,18 +112,26 @@ export default function ServicesClient() {
                     .map((el, i) => {
                         console.log(el);
                         let onMoreInfoClick = null;
+                        let onUseClick = null;
 
-                        if(Object.keys(el).includes("object-id")) {
+                        if(el.sea) {
+                            onUseClick = () => setSEAData({
+                                "object_id": el["object-id"]!!,
+                                "metadata": el.sea!!
+                            });
+                        }
+                        if(el.spa) {
                             onMoreInfoClick = () => setDrawerState({
-                                id: el["object-id"],
+                                id: el["object-id"]!!,
                                 name: el.name,
-                                metadata: { "schema": el.schema, "soya-tag": el["soya-tag"] }
-                            });  
+                                metadata: el.spa
+                            });
                         }
 
                         return <ServicesRow
                             key={i}
                             onMoreInfoClick={onMoreInfoClick}
+                            onUseClick={onUseClick}
                             name={el.name}
                         />;
                     })

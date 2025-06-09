@@ -76,7 +76,7 @@ export default function ObjectDrawer({
     let content;
     if(data !== null) {
         if(drawerState?.metadata?.schema !== undefined)
-            content = <SOYAForm schema={drawerState.metadata.schema} tag={drawerState.metadata["soya-tag"]} data={data} setNewDataAction={setNewDataAction} onLoadAction={() => setNewDataAction(data)} />;
+            content = <SOYAForm schema={drawerState.metadata.schema} tag={drawerState.metadata["tag"]} data={data} setNewDataAction={setNewDataAction} onLoadAction={() => setNewDataAction(data)} />;
         else
             content = <div className="w-full flex-grow flex-shrink overflow-y-auto">
                 <pre>{JSON.stringify(data, null, 2)}</pre>

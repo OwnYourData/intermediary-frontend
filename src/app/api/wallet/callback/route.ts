@@ -60,26 +60,8 @@ export async function GET(req: NextRequest) {
     let did = json["did"]!!;
     let valid_until = new Date(json["valid-until"]!!);
 
-    // delete old DID if exists
-    //await prisma.walletDID.deleteMany({
-    //    where: {
-    //        bPK: session.user!!.bPK
-    //    }
-    //});
-
-    // create WalletDID in DB
-    //await prisma.walletDID.create({
-    //    data: {
-    //        did: did,
-    //        valid_until: valid_until,
-    //        user: {
-    //            connect: { bPK: session.user!!.bPK }
-    //        }
-    //    }
-    //});
-  
     await client.update_user({
-        "bpk": session.user!!.bPK,
+        "bPK": session.user!!.bPK,
         "current_did": {
             did,
             valid_until: valid_until.toISOString()

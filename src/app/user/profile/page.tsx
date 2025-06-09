@@ -10,16 +10,12 @@ export default async function UserProfile() {
 
         let session = await getSession();
         session.is_verified = false;
-        //await prisma.user.update({
-        //    where: { bPK: session.user!!.bPK },
-        //    data: {
-        //        email: null
-        //    }
-        //});
-        await client.update_user({
-            bpk: session.user!!.bPK,
+        let result = await client.update_user({
+            bPK: session.user!!.bPK,
             email: null
         });
+        console.log(result);
+        console.log(await client.get_user(session.user!!.bPK));
 
         await session.save();
 
@@ -36,14 +32,12 @@ export default async function UserProfile() {
     if(!(session.is_logged_in && session.is_verified))
         { return redirect("/api/login?next=/user/profile"); }
     
-    //let user = await prisma.user.findUnique({
-    //    where: { bPK: session.user!!.bPK },
-    //    include: { current_did: true }
-    //});
     let user = await client.get_user(session.user!!.bPK, true);
 
     if(!user)
         { return redirect("/api/login?next=/user/profile"); }
+
+    console.log(user);
 
     return <div>
         <h1 className="pb-4 text-2xl font-bold">Welcome {session.user!!.given_name} {session.user!!.last_name}</h1>
@@ -70,13 +64,13 @@ export default async function UserProfile() {
             placeholder="if you see this shout really loudly"
             name="bPK"
             type="bPK"
-            value={user.bpk}
+            value={user.bPK}
         />
 
         <label className="block pt-2 text-black dark:text-white text-xl font-extrabold mb-1" htmlFor="wallet">Wallet</label>
         <div id="wallet">
-            { !!user.current_did && <>
-                <p>Link valid until <FormattedDate date={new Date(Date.parse(user.current_did.valid_until))} /></p>
+            { !!user.current_did?.did && <>
+                <p>Link valid until <FormattedDate date={new Date(Date.parse(user.current_did.valid_until!!))} /></p>
                 <label className="block text-black dark:text-white text-sm font-extrabold mb-1" htmlFor="did">Decentralised Identity (DID)</label>
                 <input
                     className="shadow appearance-none border rounded w-1/3 py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline disabled:bg-gray-100 mb-2 mr-4"

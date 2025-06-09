@@ -7,7 +7,6 @@ export default async function EmailForm() {
             Please check your email inbox. There has been an email sent to you.<br />
             If you don&apos;t see it, please also look at your spam folder.<br />
         </h1>
-        <p className="text-xl">The email has been sent from <i>{process.env.SMTP_FROM!!}</i>.</p>
         <EmailVerifiedCheck />
     </div>;
 }

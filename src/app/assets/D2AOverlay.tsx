@@ -29,12 +29,10 @@ export default function D2AOverlay({
 
     const saveMutation = useMutation({
         mutationFn: async (data: any) => {
-            console.log("saving:", data);
             return await saveD2A(data, metadata!!.schema);
         },
         onSuccess: (_: any) => {
             queryClient.invalidateQueries({ queryKey: ["assets"] });
-            alert("Success!");
             destroy();
         },
     });
@@ -65,7 +63,7 @@ export default function D2AOverlay({
           setNewDataAction={setData}
           data={data}
           schema={metadata ? metadata.schema : ""}
-          tag={metadata?.["soya-tag"]}
+          tag={metadata?.["tag"]}
         />
         <div className="pt-4 flex flex-row justify-between">
             <button className={Default + " w-[50%]"} onClick={destroy}>Cancel</button>

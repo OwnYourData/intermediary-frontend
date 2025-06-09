@@ -103,22 +103,21 @@ export default function LogsClient() {
             <tbody>
                 { (data.data as any[])  // hehe intellisense :)
                     .map((el, i) => {
-                            let onMoreInfoClick = null;
-                            if(Object.keys(el).includes("object-id") && el["display"] !== false)
-                                onMoreInfoClick = () => setDrawerState({
-                                    id: el["object-id"],
-                                    log_id: el["log-id"],
-                                    name: el.name,
-                                    metadata: { "schema": el.schema, "soya-tag": el["soya-tag"] }
-                                });
+                        let onMoreInfoClick = null;
+                        if(Object.keys(el).includes("object-id") && el["display"] !== false)
+                            onMoreInfoClick = () => setDrawerState({
+                                id: el["object-id"],
+                                log_id: el["log-id"],
+                                name: el.name,
+                                metadata: { "schema": el.schema, "tag": el["tag"] }
+                            });
 
-                            return <LogsRow
-                                key={i}
-                                onMoreInfoClick={onMoreInfoClick}
-                                name={el.name}
-                            />;
-                        }
-                    )
+                        return <LogsRow
+                            key={i}
+                            onMoreInfoClick={onMoreInfoClick}
+                            name={el.name}
+                        />;
+                    })
                 }
             </tbody>
         </table>

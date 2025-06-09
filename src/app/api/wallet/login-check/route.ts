@@ -1,5 +1,4 @@
 import { getSession } from "@/lib/session";
-import { redirect } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
 import * as config from "@/lib/config";
 
@@ -12,7 +11,7 @@ interface CheckResponse {
 export async function GET(req: NextRequest) {
   let session = await getSession();
   if(session.is_logged_in || !session.state_token)
-    { return redirect("/api/login"); }
+    { return new NextResponse("", { status: 404 }); }
 
   let res = await fetch(`${config.QR_CHECK_URL}/${session.state_token}`);
   let json: CheckResponse = await res.json();
@@ -21,15 +20,14 @@ export async function GET(req: NextRequest) {
     return new NextResponse("", { status: 404 });
 
   else if (json.login == true && json.token) {
-      session.state_token = undefined;
-      await session.save();
+    session.state_token = undefined;
+    await session.save();
 
-      return new NextResponse(JSON.stringify({ "goto": `/api/wallet/login?token=${json.token}` }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" }
-      });
+    return new NextResponse(JSON.stringify({ "goto": `/api/wallet/login?token=${json.token}` }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
   }
-
   return new NextResponse("server error", { status: 500 });
 }
 

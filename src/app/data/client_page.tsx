@@ -6,7 +6,7 @@ import { useState } from "react";
 import Loading from "./loading";
 import OpenRight from "../svg/OpenRight";
 import ObjectDrawer, { DrawerState } from "@/components/ObjectDrawer";
-import D3AOverlay from "./D3AOverlay";
+import D3AOverlay, { OverlayState } from "./D3AOverlay";
 import { Purple } from "@/components/Buttons";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { deleteEntry, fetchEntries } from "./actions";
@@ -52,7 +52,7 @@ export default function DataCatalogueClient() {
     });
 
     let [drawerState, setDrawerState] = useState<DrawerState>();  // contains object id, name and soyaData if drawer is shown
-    let [D3AData, setD3AData] = useState<any>(null);    // contains an object id and soyaData if we should show
+    let [D3AData, setD3AData] = useState<OverlayState | undefined>(undefined);    // contains an object id and soyaData if we should show
 
     if(isPending)  // if there's a pending query we can show Loading
         { return <Loading />; }
@@ -87,7 +87,7 @@ export default function DataCatalogueClient() {
         <h1 className="pb-4 text-2xl font-bold">Data Catalogue</h1>
         
         {/* meta objects, only shown once needed */}
-        <D3AOverlay open={!!D3AData} onClose={() => setD3AData(null)} object_data={D3AData} />
+        <D3AOverlay onClose={() => setD3AData(undefined)} state={D3AData} />
         <ObjectDrawer
           drawerState={drawerState}
           onClose={() => setDrawerState(undefined)}
@@ -117,8 +117,8 @@ export default function DataCatalogueClient() {
 
                         if(el.d3a) {
                             onAccessClick = () => setD3AData({
-                                "object_id": el["object-id"],
-                                "schema": el.d3a
+                                "object_id": el["object-id"]!!,
+                                "metadata": el.d3a!!
                             });
                         }
                         if(el.d2a) {
@@ -127,7 +127,6 @@ export default function DataCatalogueClient() {
                                 name: el.name,
                                 metadata: el.d2a
                             });
-
                         }
 
                         return <DataCatalogueRow

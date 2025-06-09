@@ -2,6 +2,7 @@
 
 import Left from "@/app/svg/Left";
 import Right from "@/app/svg/Right";
+import { ReactElement } from "react";
 
 
 export default function PageIndicator({
@@ -26,7 +27,7 @@ export default function PageIndicator({
     if(next) shouldPrefetch.push(next);
     prefetch(shouldPrefetch);
 
-    let makeButton = (page_id: number, innerHtml?: JSX.Element, selected: boolean = false) =>
+    let makeButton = (page_id: number, innerHtml?: ReactElement, selected: boolean = false) =>
         <button onClick={() => redirect(page_id)} className={"w-10 h-10 rounded mr-2 text-center " + (selected ? "dark:bg-gray-600 bg-gray-300" : "dark:bg-gray-700 bg-gray-400")}>{innerHtml ?? page_id}</button>;
 
     let shouldShowFirst = curr != first;

@@ -18,13 +18,9 @@ export async function fetchEntries(page: number): Promise<{
     if(!session.is_verified || !session.user)
         throw Error("no-auth");
 
-    let r_query = client.get_data_catalogue(page);
-    let pods_query = client.get_pods();
-    let data: FetchEntriesReturnType[] = [];
+    let r = await client.get_data_catalogue(page);
 
-    let r = await r_query;
-    let pods = await pods_query;
-    
+    let data: FetchEntriesReturnType[] = [];
     for(let obj of r[0] as APIObject[]) {
         if(!obj["object-id"]) continue;
         
@@ -33,10 +29,10 @@ export async function fetchEntries(page: number): Promise<{
             let meta = await client.get_object_meta(obj["object-id"]);
             newObject = { ...obj, ...meta };
 
-            newObject.d2a = (newObject.schema && newObject["tag"]) &&
-                { "schema": newObject.schema, "_soya-tag": newObject["tag"] };
-            let matching = pods.filter(el => el.d2a.schema === newObject.d2a.schema);
-            if(matching.length === 1) newObject.d3a = matching[0].d3a;
+            newObject.d2a = newObject.schema &&
+                { "schema": newObject.schema, "tag": newObject["tag"] };
+            newObject.d3a = newObject.button;
+            delete newObject.button;
         } catch(e: any) {}
 
         data.push(newObject as FetchEntriesReturnType); 
@@ -59,20 +55,6 @@ export async function deleteEntry(object_id: string) {
     return r;
 }
 
-export async function getD3AforD2A(d2a: SoyaMetadata) {
-    let session = await getSession();
-    if(!session.is_verified || !session.user)
-        throw Error("no-auth");
-    
-    let pods = await client.get_pods();
-    for(const pod of pods) {
-        if(pod.d2a === d2a)
-            return pod.d3a;
-    }
-
-    return null;
-}
-
 export async function saveD3A(data: any, schema: string, object_id?: string) {
     let session = await getSession();
     if(!session.is_verified || !session.user)
@@ -84,14 +66,11 @@ export async function saveD3A(data: any, schema: string, object_id?: string) {
     return r;
 }
 
-export async function generateSignD3ARedirect(data: any, schema: string, object_id?: string) {
+export async function generateSignD3ARedirect(object_id: string) {
     let session = await getSession();
     if(!session.is_verified || !session.user)
         throw Error("no-auth");
 
-    let obj = await saveD3A(data, schema, object_id);
-    object_id = obj["object-id"];
-    
     let body = {
         "id": object_id,
         "bpk": session.user.bPK 

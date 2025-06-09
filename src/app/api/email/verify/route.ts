@@ -2,8 +2,6 @@ import { getSession } from "@/lib/session";
 import { redirect } from "next/navigation";
 import { NextRequest } from "next/server";
 import crypto from 'crypto';
-import { prisma } from "@/lib/db";
-import { sendEmail } from "@/lib/email";
 import { render } from "@react-email/components";
 import VerifyEmail from "@/components/VerifyEmail";
 import { client } from "@/lib/sharedAdminClient";
@@ -44,10 +42,10 @@ export async function GET(req: NextRequest) {
 
     let email = urldecode_email(email_encoded);  // get email from session
 
-    let bpk = session.user!!.bPK;  // update user with email 
+    let bPK = session.user!!.bPK;  // update user with email 
     try {
         const res = await client.update_user({
-            "bpk": bpk,
+            bPK,
             "email": email,
         });
         if(!res) throw Error();
@@ -92,7 +90,7 @@ export async function POST(req: NextRequest) {
     await client.send_email({  // and send the email.
         to: emailField.toString(),
         subject: "Email Verification for intermediary.at",
-        html: render(VerifyEmail(session, href))
+        html: await render(VerifyEmail(session, href))
     });
 
     return redirect('/email/sent');  // now we tell the user we sent it

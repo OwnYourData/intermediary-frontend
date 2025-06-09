@@ -9,6 +9,8 @@ export default async function TopBar() {
     let user_element = <a className={Default + " font-bold"} href="/api/login">Sign in</a>;
     if(session.is_logged_in && session.is_verified)    
         user_element = <UserTile sessionData={session.user} />;
+    else if(session.is_logged_in && !session.is_verified)
+        user_element = <a className={Default + " font-bold"} href="/api/login">Continue signing in</a>;
 
     return <div className="flex flex-row justify-between pt-4 pb-4 px-6 text-white bg-[#202537] items-center h-20">
         <div className="float-left">

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { NextRequest, NextResponse } from "next/server";
 import { client } from "@/lib/sharedAdminClient";
 import * as config from "@/lib/config";
+import { User } from "@/lib/AdminAPIClient";
 
 // when in doubt, just redirect the user to `/api/login` and they will be forced to login if they aren't
 
@@ -58,15 +59,15 @@ export async function GET(req: NextRequest) {
             //        postcode: session.user!!.postcode,
             //    }
             //});
-            let userData = {
-                bpk: session.user!!.bPK,
-                given_name: session.user!!.given_name,
-                last_name: session.user!!.last_name,
-                postcode: session.user!!.postcode,
+            let userData: User = {
+                ...session.user!!,
                 email: null,
-                current_did: null
+                current_did: { did: null, valid_until: null }
             };
-            if(!(await client.create_user(userData)))
+            console.log(userData);
+            let success = await client.create_user(userData);
+            console.log(success);
+            if(!success)
                 return new NextResponse("user could not be created");
         }
 
@@ -93,11 +94,11 @@ export async function GET(req: NextRequest) {
         let user = await client.get_user(session.user!!.bPK, true);
 
         // expire DID if its become invalid
-        if(user!!.current_did) {
+        if(user?.current_did && user?.current_did.valid_until) {
             let now = Date.now();
             let expire = Date.parse(user!!.current_did.valid_until);
             if(expire - now < 0)
-                await client.update_user({ "bpk": session.user!!.bPK, current_did: null });
+                await client.update_user({ "bPK": session.user!!.bPK, current_did: null });
         }
 
         return redirect(nextUrl);

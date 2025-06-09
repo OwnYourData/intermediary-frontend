@@ -129,7 +129,7 @@ export default function AssetsClient() {
                                 onMoreInfoClick = () => setDrawerState({
                                     id: el["object-id"],
                                     name: el.name,
-                                    metadata: { "schema": el.schema, "soya-tag": el["soya-tag"] }
+                                    metadata: { "schema": el.schema, "tag": el["tag"] }
                                 });
 
                             return <AssetsRow
