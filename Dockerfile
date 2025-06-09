@@ -44,31 +44,19 @@ ENV NEXT_TELEMETRY_DISABLED 1
 RUN rm -rf .env
 RUN mv .env.build .env
 
-# generate Prisma client
-RUN pnpm exec prisma generate
-
 # build
 RUN pnpm build
+RUN pnpm prune --prod
 
 
 ## dist
-FROM docker.io/node:20-alpine as dist
-
-RUN apk add --no-cache libc6-compat git
-
-# Setup pnpm environment
-ENV PNPM_HOME="/pnpm"
-ENV PATH="$PNPM_HOME:$PATH"
-COPY --from=deps /pnpm /pnpm
-RUN npm i -g corepack@latest
-RUN corepack enable
-RUN corepack prepare pnpm@latest --activate
+FROM docker.io/alpine:latest as dist
+RUN apk add --update nodejs
 
 WORKDIR /app
 
 COPY package.json ./
-COPY prisma/ ./prisma/
-COPY --from=deps /app/node_modules ./node_modules/
+COPY --from=build /app/node_modules ./node_modules/
 COPY --from=build /app/.next ./.next/
 COPY --from=build /app/.next/standalone/. .
 COPY --from=build /app/public ./public/
@@ -78,6 +66,8 @@ COPY .env.dummy .env
 EXPOSE 3000
 ENV HOSTNAME "0.0.0.0"
 ENV PORT 3000
+ENV NODE_ENV production
+ENV NEXT_TELEMETRY_DISABLED 1
 
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 CMD [ "wget", "-q0", "http://localhost:3000/health" ]
 
