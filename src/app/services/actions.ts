@@ -42,12 +42,12 @@ export async function fetchEntries(page: number) {
 }
 
 
-export async function saveSEA(data: any, schema: string, object_id?: string) {
+export async function saveSEA(data: any, schema: string, source_id: string) {
     let session = await getSession();
     if(!session.is_verified || !session.user)
         throw Error("no-auth");
 
-    let r = await client.submit_sa(data, schema, "data", session.user.bPK, object_id);
+    let r = await client.submit_sea(data, schema, "data", session.user.bPK, source_id);
     if((r as any as ResponseBase)["status_code"] != 200)
         throw Error("Saving failed!");
     return r;

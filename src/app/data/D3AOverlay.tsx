@@ -26,8 +26,8 @@ export default function D3AOverlay({
     let [data, setData] = useState({});
     const mutation = useMutation({
         mutationFn: (variables) => {
-            let { data } = variables as any;
-            return saveD3A(data, state!!["metadata"]["schema"]);
+            let { data, object_id } = variables as any;
+            return saveD3A(data, state!!["metadata"]["schema"], object_id);
         },
         onSuccess: (result: any) => {
             queryClient.invalidateQueries({ queryKey: ["data", "logs", "contracts"] });
@@ -46,7 +46,7 @@ export default function D3AOverlay({
             return;
         }
 
-        mutation.mutate({ data } as any);
+        mutation.mutate({ data, "object_id": state!!["object_id"]!! } as any);
     }
 
     if(!state) return <></>;

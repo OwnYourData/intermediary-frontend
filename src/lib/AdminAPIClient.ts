@@ -345,7 +345,7 @@ export default class AdminAPIClient {
         return json;
     }
 
-    async submit_da(form_data: any, schema: string, repo: string, user_id: string, object_id?: string) {
+    async submit_d2a(form_data: any, schema: string, repo: string, user_id: string, object_id?: string) {
         const body = {
             "meta": {
                 schema,
@@ -369,13 +369,38 @@ export default class AdminAPIClient {
         return json;
     }
 
-    async submit_sa(form_data: any, schema: string, repo: string, user_id: string, object_id?: string) {
+    async submit_d3a(form_data: any, schema: string, repo: string, user_id: string, source_id: string) {
         const body = {
             "meta": {
                 schema,
                 repo,
                 "user": user_id,
-                "object-id": object_id
+                "source-id": source_id
+            },
+            "data": form_data
+        };
+
+        const res = await this.fetch(`${this.base_url}/api/da_save`, {
+            method: "POST",
+            body: JSON.stringify(body),
+            headers: {
+                'content-type': 'application/json'
+            }
+        });
+
+        let json: Object = await res.json();
+        Object.assign(json, { "status_code": res.status });
+        return json;
+    }
+
+
+    async submit_sea(form_data: any, schema: string, repo: string, user_id: string, source_id: string) {
+        const body = {
+            "meta": {
+                schema,
+                repo,
+                "user": user_id,
+                "source-id": source_id
             },
             "data": form_data
         };

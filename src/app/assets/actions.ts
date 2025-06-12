@@ -49,7 +49,7 @@ export async function saveD2A(data: any, schema: string, object_id?: string) {
     if(!session.is_verified || !session.user)
         throw Error("no-auth");
 
-    let r = await client.submit_da(data, schema, "assets", session.user.bPK, object_id);
+    let r = await client.submit_d2a(data, schema, "assets", session.user.bPK, object_id);
     console.log(r);
     if((r as any as ResponseBase)["status_code"] != 200)
         throw Error("Saving failed!");
