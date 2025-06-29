@@ -20,3 +20,4 @@ yarn-error.log*
 intermediary-frontent-deploy.yaml
 .env
 .env.staging
+tmp/

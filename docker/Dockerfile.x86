@@ -1,0 +1,72 @@
+FROM --platform=linux/amd64 docker.io/node:20-alpine AS deps
+
+RUN apk add --no-cache libc6-compat git
+
+# pnpm-/corepack-Setup
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN npm i -g corepack@latest && \
+    corepack enable && \
+    corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+COPY package.json ./
+RUN pnpm install
+
+
+########################################
+#  Build-Stage
+########################################
+FROM --platform=linux/amd64 docker.io/node:20-alpine AS build
+RUN apk add --no-cache libc6-compat git
+
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+COPY --from=deps /pnpm /pnpm
+RUN npm i -g corepack@latest && \
+    corepack enable && \
+    corepack prepare pnpm@latest --activate
+
+WORKDIR /app
+
+COPY package.json ./
+RUN mkdir node_modules
+COPY --from=deps /app/node_modules/. node_modules/.
+
+COPY . .
+
+# Prod-Envs
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+RUN rm -f .env && mv .env.build .env
+
+# Build & Prune
+RUN pnpm build && pnpm prune --prod
+
+
+########################################
+#  Dist-Stage
+########################################
+FROM --platform=linux/amd64 docker.io/alpine:latest AS dist
+RUN apk add --no-cache nodejs
+
+WORKDIR /app
+
+COPY package.json ./
+COPY --from=build /app/node_modules ./node_modules/
+COPY --from=build /app/.next ./.next/
+COPY --from=build /app/.next/standalone/. .
+COPY --from=build /app/public ./public/
+COPY .env.dummy .env
+
+EXPOSE 3000
+ENV HOSTNAME=0.0.0.0 \
+    PORT=3000 \
+    NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1
+
+HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
+  CMD ["wget","-qO-","http://localhost:3000/health"] || exit 1
+
+CMD ["node","server.js"]
